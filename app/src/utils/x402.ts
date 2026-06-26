@@ -12,12 +12,6 @@ export interface PaymentResponse {
   timestamp: number;
 }
 
-export interface CheckPaymentResponse {
-  paid: boolean;
-  transactionId?: string;
-  amount?: number;
-}
-
 export const x402API = {
   async payment(payment: PaymentRequest): Promise<PaymentResponse> {
     const endpoint = `https://x402-api.aibtc.dev/v1/${payment.token}`;
@@ -45,7 +39,7 @@ export const x402API = {
     };
   },
 
-  async checkPayment(jobId: number): Promise<CheckPaymentResponse> {
+  async checkPayment(jobId: number): Promise<{ paid: boolean }> {
     const endpoint = `https://x402-api.aibtc.dev/v1/check/${jobId}`;
     const response = await fetch(endpoint);
 
@@ -54,31 +48,6 @@ export const x402API = {
     }
 
     const data = await response.json();
-    return {
-      paid: data.paid,
-      transactionId: data.transaction_id,
-      amount: data.amount,
-    };
-  },
-
-  async createInvoice(recipient: string, amount: number, token: 'stx' | 'sbtc' | 'usdcx'): Promise<{ invoice: string }> {
-    const endpoint = `https://x402-api.aibtc.dev/v1/${token}/invoice`;
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        recipient,
-        amount,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Invoice creation failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return { invoice: data.invoice };
+    return { paid: data.paid };
   },
 };
