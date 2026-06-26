@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { Clarinet, types } from "clarinet";
 
 describe("Agentic Commerce Tests", () => {

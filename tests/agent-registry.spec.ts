@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Clarinet, Contract, types } from "clarinet";
+import { Clarinet, types } from "clarinet";
 
 describe("Agent Registry Tests", () => {
   let chain: any;
