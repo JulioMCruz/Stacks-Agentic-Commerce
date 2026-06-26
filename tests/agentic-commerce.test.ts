@@ -35,6 +35,19 @@ function createAndFund() {
   return simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client);
 }
 
+/**
+ * complete-job / reject-job call into reputation-registry, which only accepts
+ * whitelisted protocol-callers. Register the commerce contract as one.
+ */
+function whitelistCommerce() {
+  return simnet.callPublicFn(
+    "reputation-registry",
+    "add-protocol-caller",
+    [Cl.contractPrincipal(deployer, "agentic-commerce")],
+    deployer
+  );
+}
+
 function statusOf(jobId = 1): number {
   const job: any = simnet.callReadOnlyFn(C, "get-job", [Cl.uint(jobId)], deployer)
     .result;
@@ -44,6 +57,8 @@ function statusOf(jobId = 1): number {
 
 describe("agentic-commerce – job lifecycle & escrow", () => {
   it("happy path: create -> fund (escrow) -> assign -> submit -> complete (payout)", () => {
+    whitelistCommerce();
+
     // create
     expect(createJob().result).toBeOk(Cl.uint(1));
     expect(statusOf()).toBe(0); // OPEN
@@ -91,7 +106,35 @@ describe("agentic-commerce – job lifecycle & escrow", () => {
     ).toBeOk(Cl.uint(0));
   });
 
+  it("completing a job records it on the provider's reputation", () => {
+    whitelistCommerce();
+    createAndFund();
+    simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+    simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("deliverable")], provider);
+    expect(
+      simnet.callPublicFn(C, "complete-job", [Cl.uint(1)], evaluator).result
+    ).toBeOk(Cl.bool(true));
+
+    expect(
+      simnet.callReadOnlyFn(
+        "reputation-registry",
+        "get-reputation",
+        [Cl.principal(provider)],
+        deployer
+      ).result
+    ).toBeOk(
+      Cl.tuple({
+        "total-score": Cl.uint(0),
+        "rating-count": Cl.uint(0),
+        "average-score": Cl.uint(0),
+        "completed-jobs": Cl.uint(1),
+        "disputed-jobs": Cl.uint(0),
+      })
+    );
+  });
+
   it("reject on submitted work refunds the client", () => {
+    whitelistCommerce();
     createAndFund();
     simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
     simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("bad")], provider);

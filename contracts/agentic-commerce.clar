@@ -269,18 +269,17 @@
     (
       (job (unwrap! (map-get? jobs job-id) ERR_JOB_NOT_FOUND))
       (budget (get budget job))
-      (provider-opt (get provider job))
+      (provider (unwrap! (get provider job) ERR_NOT_PROVIDER))
     )
     (asserts! (is-eq (get status job) STATUS_SUBMITTED) ERR_INVALID_STATUS)
     (asserts! (is-eq (get evaluator job) tx-sender) ERR_NOT_EVALUATOR)
-    (asserts! (is-some provider-opt) ERR_NOT_PROVIDER)
-    
+
     ;; Transfer from escrow to provider
-    (try! (as-contract (stx-transfer? budget tx-sender (unwrap! provider-opt ERR_NOT_PROVIDER))))
-    
+    (try! (as-contract (stx-transfer? budget tx-sender provider)))
+
     ;; Clear escrow
     (map-delete escrow-balances job-id)
-    
+
     ;; Update job status
     (map-set jobs job-id {
       client: (get client job),
@@ -292,7 +291,11 @@
       status: STATUS_COMPLETED,
       deliverable: (get deliverable job)
     })
-    
+
+    ;; Record the completed job on the provider's reputation.
+    ;; This contract must be registered as a protocol-caller on reputation-registry.
+    (try! (as-contract (contract-call? .reputation-registry update-job-stats provider true false)))
+
     (ok true)
   )
 )
@@ -302,16 +305,17 @@
     (
       (job (unwrap! (map-get? jobs job-id) ERR_JOB_NOT_FOUND))
       (budget (get budget job))
+      (provider (unwrap! (get provider job) ERR_NOT_PROVIDER))
     )
     (asserts! (is-eq (get status job) STATUS_SUBMITTED) ERR_INVALID_STATUS)
     (asserts! (or (is-eq (get client job) tx-sender) (is-eq (get evaluator job) tx-sender)) ERR_NOT_AUTHORIZED)
-    
+
     ;; Refund escrow to client
     (try! (as-contract (stx-transfer? budget tx-sender (get client job))))
-    
+
     ;; Clear escrow
     (map-delete escrow-balances job-id)
-    
+
     ;; Update job status
     (map-set jobs job-id {
       client: (get client job),
@@ -323,7 +327,10 @@
       status: STATUS_REJECTED,
       deliverable: (get deliverable job)
     })
-    
+
+    ;; Record the disputed job on the provider's reputation.
+    (try! (as-contract (contract-call? .reputation-registry update-job-stats provider false true)))
+
     (ok true)
   )
 )

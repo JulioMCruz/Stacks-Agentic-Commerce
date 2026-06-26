@@ -6,6 +6,59 @@ Clarity smart contracts for PerkOS Stacks Agentic Commerce.
 
 Four core contracts providing agent identity, job escrow, reputation, and validation on Stacks.
 
+## Contract Addresses
+
+A Clarity contract's address is deterministic: `<deployer-principal>.<contract-name>`. The four
+contracts deploy together — Clarinet resolves the `agentic-commerce → reputation-registry`
+dependency (added so `complete-job`/`reject-job` can update reputation) automatically.
+
+### Local (simnet / devnet) — live now
+
+Deployer `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM` (mnemonic in `settings/Devnet.toml`):
+
+| Contract | Address |
+|----------|---------|
+| agent-registry | `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.agent-registry` |
+| agentic-commerce | `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.agentic-commerce` |
+| reputation-registry | `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.reputation-registry` |
+| validation-registry | `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.validation-registry` |
+
+These resolve out of the box when running the test suite (`npm test`, in-process simnet).
+
+### Testnet — pending deployment
+
+`settings/Testnet.toml` currently uses the default Clarinet mnemonic, whose deployer is also
+`ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM`. After `clarinet deployments apply --testnet` the
+addresses are `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.<contract-name>` (same table as above).
+
+> ⚠️ This is the **well-known public test key**. For an owned deployment, replace the deployer
+> mnemonic in `settings/Testnet.toml` with the PerkOS wallet, then the addresses become
+> `<your-testnet-principal>.<contract-name>`.
+
+### Mainnet — pending deployment
+
+Replace the default mnemonic in `settings/Mainnet.toml` with the PerkOS wallet **before** deploying
+(never ship mainnet with the default test key). Mainnet addresses use the `SP…` form:
+`SP….<contract-name>`.
+
+### Required post-deploy step
+
+`complete-job` / `reject-job` call `reputation-registry.update-job-stats` as the contract, which is
+protocol-gated. After deploying, whitelist the commerce contract once:
+
+```clarity
+(contract-call? .reputation-registry add-protocol-caller '<deployer>.agentic-commerce)
+```
+
+### Frontend wiring
+
+Point the app at the deployed deployer:
+
+```bash
+NEXT_PUBLIC_CONTRACT_ADDRESS=<deployer-principal>
+NEXT_PUBLIC_STACKS_NETWORK=testnet   # or mainnet
+```
+
 ## Contracts
 
 ### agent-registry.clar
@@ -139,11 +192,10 @@ Agent verification and capabilities.
 **Functions:**
 
 ```clarity
-;; Verify agent
+;; Verify agent (protocol-caller only)
 (define-public (verify-agent
   (agent principal)
-  (proof-hash (string-ascii 64))
-  (verification-type (string-ascii 32))
+  (proof-hash (buff 32))
   (capabilities (list 10 (string-ascii 32)))
 ))
 

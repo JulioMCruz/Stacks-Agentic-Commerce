@@ -46,14 +46,14 @@ plan:
       path: contracts/agent-registry.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
-      contract-name: agentic-commerce
-      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-      path: contracts/agentic-commerce.clar
-      clarity-version: 2
-    - transaction-type: emulated-contract-publish
       contract-name: reputation-registry
       emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
       path: contracts/reputation-registry.clar
+      clarity-version: 2
+    - transaction-type: emulated-contract-publish
+      contract-name: agentic-commerce
+      emulated-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      path: contracts/agentic-commerce.clar
       clarity-version: 2
     - transaction-type: emulated-contract-publish
       contract-name: validation-registry
