@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Reputation, getReputation, rateAgent } from "../../services/reputation";
-import { Verification, getVerification } from "../../services/validation";
-import TransactionButton from "../../components/TransactionButton";
+import { Reputation, getReputation, rateAgent } from "../services/reputation";
+import { Verification, getVerification } from "../services/validation";
+import TransactionButton from "./TransactionButton";
 
 interface AgentProfileProps {
   agentAddress: string;

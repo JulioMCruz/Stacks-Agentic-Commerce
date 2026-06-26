@@ -1,9 +1,9 @@
-import { openContractCall } from "@stacks/connect-react";
-import { principalCV, uintCV, stringAsciiCV, bufferCVFromString } from "@stacks/transactions";
+import { request } from "@stacks/connect";
+import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../constants/contract";
-import { NETWORK } from "../constants/network";
+import { NETWORK_NAME } from "../constants/network";
 
-const REPUTATION_CONTRACT = "reputation-registry";
+const REPUTATION_CONTRACT = `${CONTRACT_ADDRESS}.reputation-registry` as `${string}.${string}`;
 
 export interface Reputation {
   totalScore: number;
@@ -21,8 +21,7 @@ export interface Rating {
 
 export async function getReputation(agentAddress: string): Promise<Reputation | null> {
   try {
-    // This would call the contract in production
-    // For now, return mock data
+    // TODO: wire to reputation-registry get-reputation read-only call
     return {
       totalScore: 0,
       ratingCount: 0,
@@ -42,33 +41,22 @@ export async function rateAgent(
   jobId: number,
   comment: string
 ): Promise<void> {
-  await openContractCall({
-    contractAddress: CONTRACT_ADDRESS,
-    contractName: REPUTATION_CONTRACT,
+  await request("stx_callContract", {
+    contract: REPUTATION_CONTRACT,
     functionName: "rate-agent",
     functionArgs: [
-      principalCV(agentAddress),
-      uintCV(score),
-      uintCV(jobId),
-      stringAsciiCV(comment),
+      Cl.principal(agentAddress),
+      Cl.uint(score),
+      Cl.uint(jobId),
+      Cl.stringAscii(comment),
     ],
-    network: NETWORK,
-    appDetails: {
-      name: "PerkOS Stacks Agentic Commerce",
-      icon: "https://your-icon-url.com/logo.png",
-    },
-    onFinish: (data) => {
-      console.log("Agent rated:", data);
-    },
-    onCancel: () => {
-      console.log("Rating cancelled");
-    },
+    network: NETWORK_NAME,
   });
 }
 
 export async function hasRated(agentAddress: string, raterAddress: string): Promise<boolean> {
   try {
-    // This would call the contract in production
+    // TODO: wire to reputation-registry has-rated read-only call
     return false;
   } catch (error) {
     console.error("Error checking rating:", error);

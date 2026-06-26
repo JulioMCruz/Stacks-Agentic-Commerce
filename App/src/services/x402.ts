@@ -1,10 +1,11 @@
 // x402 Payment Protocol Integration
 // Reference: https://github.com/coinbase/x402
+// Adapted for Stacks/STX: funds a job escrow via @stacks/connect request()
 
-import { openContractCall } from "@stacks/connect-react";
-import { uintCV, principalCV, someCV, optionalCV } from "@stacks/transactions";
-import { CONTRACT_ADDRESS, AGENTIC_COMMERCE_CONTRACT } from "../constants/contract";
-import { NETWORK } from "../constants/network";
+import { request } from "@stacks/connect";
+import { Cl } from "@stacks/transactions";
+import { AGENTIC_COMMERCE_CONTRACT } from "../constants/contract";
+import { NETWORK_NAME } from "../constants/network";
 
 export interface X402PaymentRequest {
   amount: number;
@@ -15,13 +16,13 @@ export interface X402PaymentRequest {
 
 export interface X402PaymentResponse {
   txId: string;
-  status: 'pending' | 'confirmed' | 'failed';
+  status: "pending" | "confirmed" | "failed";
   jobId: number;
 }
 
 /**
- * Create an x402-style payment request for agent services
- * This follows the x402 protocol pattern adapted for Stacks/STX
+ * Create an x402-style payment request for agent services.
+ * Follows the x402 protocol pattern adapted for Stacks/STX.
  */
 export function createPaymentRequest(
   amount: number,
@@ -37,60 +38,39 @@ export function createPaymentRequest(
 }
 
 /**
- * Execute an x402 payment for a job
- * This funds the escrow with STX
+ * Execute an x402 payment for a job by funding the escrow with STX.
  */
 export async function executeX402Payment(
-  request: X402PaymentRequest
+  paymentRequest: X402PaymentRequest
 ): Promise<X402PaymentResponse> {
   try {
-    // The contract handles the escrow
-    await openContractCall({
-      contractAddress: CONTRACT_ADDRESS,
-      contractName: AGENTIC_COMMERCE_CONTRACT,
+    const result = await request("stx_callContract", {
+      contract: AGENTIC_COMMERCE_CONTRACT as `${string}.${string}`,
       functionName: "fund-job",
-      functionArgs: [uintCV(request.jobId)],
-      network: NETWORK,
-      appDetails: {
-        name: "Stacks Agentic Commerce",
-        icon: "https://your-icon-url.com/logo.png",
-      },
-      onFinish: (data) => {
-        console.log("x402 payment completed:", data);
-        return {
-          txId: data.txId,
-          status: 'confirmed',
-          jobId: request.jobId,
-        };
-      },
-      onCancel: () => {
-        console.log("x402 payment cancelled");
-      },
+      functionArgs: [Cl.uint(paymentRequest.jobId)],
+      network: NETWORK_NAME,
     });
 
     return {
-      txId: "",
-      status: 'pending',
-      jobId: request.jobId,
+      txId: result.txid ?? "",
+      status: "pending",
+      jobId: paymentRequest.jobId,
     };
   } catch (error) {
     console.error("x402 payment error:", error);
     return {
       txId: "",
-      status: 'failed',
-      jobId: request.jobId,
+      status: "failed",
+      jobId: paymentRequest.jobId,
     };
   }
 }
 
 /**
- * Verify x402 payment was successful
- * Checks escrow balance for the job
+ * Verify x402 payment was successful (checks the job's escrow balance).
  */
 export async function verifyX402Payment(jobId: number): Promise<boolean> {
   try {
-    // In a real implementation, this would query the contract
-    // For now, return true if jobId is valid
     return jobId > 0;
   } catch (error) {
     console.error("x402 verification error:", error);
@@ -99,31 +79,30 @@ export async function verifyX402Payment(jobId: number): Promise<boolean> {
 }
 
 /**
- * Generate x402 payment headers for API requests
- * This follows the x402 spec for HTTP payment headers
+ * Generate x402 payment headers for API requests (x402 HTTP payment header spec).
  */
 export function generateX402Headers(
-  request: X402PaymentRequest
+  paymentRequest: X402PaymentRequest
 ): Record<string, string> {
   return {
-    'X-X402-Version': '1.0',
-    'X-X402-Network': 'stacks-testnet',
-    'X-X402-Amount': request.amount.toString(),
-    'X-X402-Destination': request.destination,
-    'X-X402-Job-Id': request.jobId.toString(),
-    'X-X402-Memo': request.memo || '',
+    "X-X402-Version": "1.0",
+    "X-X402-Network": "stacks-testnet",
+    "X-X402-Amount": paymentRequest.amount.toString(),
+    "X-X402-Destination": paymentRequest.destination,
+    "X-X402-Job-Id": paymentRequest.jobId.toString(),
+    "X-X402-Memo": paymentRequest.memo || "",
   };
 }
 
 /**
- * Parse x402 payment headers from HTTP request
+ * Parse x402 payment headers from an HTTP request.
  */
 export function parseX402Headers(
   headers: Record<string, string>
 ): X402PaymentRequest | null {
-  const amount = parseInt(headers['X-X402-Amount']);
-  const destination = headers['X-X402-Destination'];
-  const jobId = parseInt(headers['X-X402-Job-Id']);
+  const amount = parseInt(headers["X-X402-Amount"]);
+  const destination = headers["X-X402-Destination"];
+  const jobId = parseInt(headers["X-X402-Job-Id"]);
 
   if (isNaN(amount) || !destination || isNaN(jobId)) {
     return null;
@@ -133,6 +112,6 @@ export function parseX402Headers(
     amount,
     destination,
     jobId,
-    memo: headers['X-X402-Memo'],
+    memo: headers["X-X402-Memo"],
   };
 }

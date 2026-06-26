@@ -1,6 +1,6 @@
-import { callReadOnlyFunction, uintCV, stringAsciiCV, principalCV, optionalCV, noneCV, someCV, bufferCVFromString } from "@stacks/transactions";
+import { fetchCallReadOnlyFunction, cvToValue, Cl } from "@stacks/transactions";
 import { NETWORK } from "../constants/network";
-import { CONTRACT_ADDRESS, AGENTIC_COMMERCE_CONTRACT } from "../constants/contract";
+import { CONTRACT_ADDRESS } from "../constants/contract";
 
 export interface Job {
   id: number;
@@ -17,30 +17,30 @@ export interface Job {
 
 export async function getJob(jobId: number): Promise<Job | null> {
   try {
-    const result = await callReadOnlyFunction({
+    const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
       contractName: "agentic-commerce",
       functionName: "get-job",
-      functionArgs: [uintCV(jobId)],
+      functionArgs: [Cl.uint(jobId)],
       network: NETWORK,
       senderAddress: CONTRACT_ADDRESS,
     });
 
-    if (result.type === 'ok' && result.value?.type === 'tuple') {
-      const data = result.value.data;
-      return {
-        id: jobId,
-        client: data.client?.value || '',
-        provider: data.provider?.value?.value,
-        evaluator: data.evaluator?.value || '',
-        description: data.description?.value || '',
-        budget: Number(data.budget?.value) || 0,
-        expiredAt: Number(data['expired-at']?.value) || 0,
-        status: Number(data.status?.value) || 0,
-        deliverable: data.deliverable?.value?.value,
-      };
-    }
-    return null;
+    if (cv.type !== "ok") return null;
+    const t: any = cvToValue(cv).value;
+
+    return {
+      id: jobId,
+      client: t.client?.value ?? "",
+      // provider is (optional principal): value is the inner principal CV or null
+      provider: t.provider?.value ? t.provider.value.value : undefined,
+      evaluator: t.evaluator?.value ?? "",
+      description: t.description?.value ?? "",
+      budget: Number(t.budget?.value ?? 0),
+      expiredAt: Number(t["expired-at"]?.value ?? 0),
+      status: Number(t.status?.value ?? 0),
+      deliverable: t.deliverable?.value ? t.deliverable.value.value : undefined,
+    };
   } catch (error) {
     console.error("Error getting job:", error);
     return null;
@@ -49,7 +49,7 @@ export async function getJob(jobId: number): Promise<Job | null> {
 
 export async function getJobCount(): Promise<number> {
   try {
-    const result = await callReadOnlyFunction({
+    const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
       contractName: "agentic-commerce",
       functionName: "get-job-count",
@@ -58,10 +58,8 @@ export async function getJobCount(): Promise<number> {
       senderAddress: CONTRACT_ADDRESS,
     });
 
-    if (result.type === 'ok' && result.value?.type === 'uint') {
-      return Number(result.value.value);
-    }
-    return 0;
+    if (cv.type !== "ok") return 0;
+    return Number(cvToValue(cv).value);
   } catch (error) {
     console.error("Error getting job count:", error);
     return 0;
@@ -70,19 +68,17 @@ export async function getJobCount(): Promise<number> {
 
 export async function getEscrowBalance(jobId: number): Promise<number> {
   try {
-    const result = await callReadOnlyFunction({
+    const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
       contractName: "agentic-commerce",
       functionName: "get-escrow-balance",
-      functionArgs: [uintCV(jobId)],
+      functionArgs: [Cl.uint(jobId)],
       network: NETWORK,
       senderAddress: CONTRACT_ADDRESS,
     });
 
-    if (result.type === 'ok' && result.value?.type === 'uint') {
-      return Number(result.value.value);
-    }
-    return 0;
+    if (cv.type !== "ok") return 0;
+    return Number(cvToValue(cv).value);
   } catch (error) {
     console.error("Error getting escrow balance:", error);
     return 0;

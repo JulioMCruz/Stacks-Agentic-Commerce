@@ -1,6 +1,9 @@
-import { StacksNetwork, StacksTestnet, StacksMainnet } from "@stacks/network";
+import { STACKS_MAINNET, STACKS_TESTNET, StacksNetwork } from "@stacks/network";
 
-export const NETWORK: StacksNetwork =
-  process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet"
-    ? new StacksMainnet()
-    : new StacksTestnet();
+const isMainnet = process.env.NEXT_PUBLIC_STACKS_NETWORK === "mainnet";
+
+// Network object for read-only calls (fetchCallReadOnlyFunction)
+export const NETWORK: StacksNetwork = isMainnet ? STACKS_MAINNET : STACKS_TESTNET;
+
+// Network name string for wallet requests (@stacks/connect request())
+export const NETWORK_NAME: "mainnet" | "testnet" = isMainnet ? "mainnet" : "testnet";
