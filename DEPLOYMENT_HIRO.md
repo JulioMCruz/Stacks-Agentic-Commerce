@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Deploy Files
+# Stacks Agentic Commerce - Deployment Files
 
 ## Deploy to Testnet via Hiro Wallet
 
@@ -20,7 +20,19 @@
 
 ### Step 3: Update Frontend
 
-After deployment, update `app/src/constants/contract.ts` with the new addresses.
+After deployment, update `app/src/constants/contract.ts` with the new addresses:
+
+```typescript
+export const AgentRegistryContract = {
+  address: 'ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.agent-registry',
+  name: 'agent-registry',
+};
+
+export const AgenticCommerceContract = {
+  address: 'ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.agentic-commerce',
+  name: 'agentic-commerce',
+};
+```
 
 ## Frontend Test
 
