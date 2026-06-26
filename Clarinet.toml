@@ -1,35 +1,16 @@
-# Stacks Agentic Commerce - Clarinet Configuration
-# Project: JulioMCruz/Stacks-Agentic-Commerce
-# Branch: feat/agent-registry
+[project]
+name = "Stacks-Agentic-Commerce"
+authors = ["Julio M Cruz <julio@perkos.io>"]
+description = "Agent infrastructure on Stacks: Agent identity registry + job escrow with x402 payments"
+telemetry = false
 
-[contract]
+[[contract]]
 name = "agent-registry"
 path = "contracts/agent-registry.clar"
 
-[contract]
+[[contract]]
 name = "agentic-commerce"
 path = "contracts/agentic-commerce.clar"
 
-[network]
-name = "devnet"
-rpc_port = 20444
-p2p_port = 20445
-stx_port = 20446
-chain_id = 0x80000000
-fees_rate = 1
-
-[network.testnet]
-rpc_port = 3999
-p2p_port = 3998
-stx_port = 3997
-chain_id = 0x80000001
-
-[network.mainnet]
-rpc_port = 20444
-p2p_port = 20445
-stx_port = 20446
-chain_id = 0x00000001
-
-[wallet]
-mnemonic = "test test test test test test test test test test test test"
-address = "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE"
+[repl]
+costs_version = 2
