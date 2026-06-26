@@ -12,5 +12,13 @@ epoch = "2.5"
 path = "contracts/agentic-commerce.clar"
 epoch = "2.5"
 
+[contracts.reputation-registry]
+path = "contracts/reputation-registry.clar"
+epoch = "2.5"
+
+[contracts.validation-registry]
+path = "contracts/validation-registry.clar"
+epoch = "2.5"
+
 [repl]
 costs_version = 2
