@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Pencil, Power, Fingerprint } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
-import { request } from "@stacks/connect";
+import { request, getLocalStorage } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
 
 const AGENT_REGISTRY = `${CONTRACT_ADDRESS}.agent-registry` as `${string}.${string}`;
+
+const connectedStx = () => getLocalStorage()?.addresses?.stx?.[0]?.address ?? "";
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -60,12 +62,14 @@ export default function AgentsPage() {
           Cl.stringAscii(formData.name),
           Cl.stringAscii(formData.description),
           Cl.principal(formData.wallet),
-          Cl.list([
-            Cl.tuple({
-              name: Cl.stringAscii(formData.endpointName),
-              url: Cl.stringAscii(formData.endpointUrl),
-            }),
-          ]),
+          formData.endpointUrl
+            ? Cl.list([
+                Cl.tuple({
+                  name: Cl.stringAscii(formData.endpointName || "web"),
+                  url: Cl.stringAscii(formData.endpointUrl),
+                }),
+              ])
+            : Cl.list([]),
         ],
         network: NETWORK_NAME,
       });
@@ -150,7 +154,12 @@ export default function AgentsPage() {
           <p className="mt-1.5 text-mist-300">On-chain identity for autonomous agents on Stacks.</p>
         </div>
         <button
-          onClick={() => { setShowForm(!showForm); setEditingAgent(null); }}
+          onClick={() => {
+            const opening = !showForm;
+            setShowForm(opening);
+            setEditingAgent(null);
+            if (opening) setFormData((f) => ({ ...f, wallet: f.wallet || connectedStx() }));
+          }}
           className={showForm ? "btn-ghost" : "btn-primary"}
           disabled={!!activeAction}
         >
@@ -168,25 +177,35 @@ export default function AgentsPage() {
       {(showForm || editingAgent) && (
         <form onSubmit={editingAgent ? handleUpdate : handleRegister} className="card mt-6 p-6">
           <h2 className="text-lg font-semibold">{editingAgent ? "Update Agent" : "Register New Agent"}</h2>
+          {!editingAgent && (
+            <p className="mt-1 text-sm text-mist-500">
+              Connect your wallet, then register on Stacks {NETWORK_NAME} in seconds. Only a name and description are required.
+            </p>
+          )}
           <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="label">Name</label>
-              <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="field" required />
+              <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="field" placeholder="My Agent" required />
             </div>
             <div>
-              <label className="label">Wallet Address</label>
-              <input type="text" value={formData.wallet} onChange={(e) => setFormData({ ...formData, wallet: e.target.value })} className="field font-mono" placeholder="ST…" required />
+              <label className="label">Agent Wallet</label>
+              <input type="text" value={formData.wallet} onChange={(e) => setFormData({ ...formData, wallet: e.target.value })} className="field font-mono" placeholder="connect wallet to autofill" required />
+              {!editingAgent && (
+                <button type="button" onClick={() => setFormData((f) => ({ ...f, wallet: connectedStx() }))} className="mt-1.5 text-xs text-brand-400 hover:text-brand-300">
+                  Use my connected wallet
+                </button>
+              )}
             </div>
             <div className="md:col-span-2">
               <label className="label">Description</label>
               <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="field" rows={3} required />
             </div>
             <div>
-              <label className="label">Endpoint Name</label>
+              <label className="label">Endpoint Name (optional)</label>
               <input type="text" value={formData.endpointName} onChange={(e) => setFormData({ ...formData, endpointName: e.target.value })} className="field" placeholder="web, a2a, mcp" />
             </div>
             <div>
-              <label className="label">Endpoint URL</label>
+              <label className="label">Endpoint URL (optional)</label>
               <input type="url" value={formData.endpointUrl} onChange={(e) => setFormData({ ...formData, endpointUrl: e.target.value })} className="field" placeholder="https://…" />
             </div>
           </div>
