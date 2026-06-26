@@ -1,61 +1,96 @@
-# Stacks Agentic Commerce - x402 Payment Integration
+# x402 Integration
 
-## x402 Protocol Implementation
+## Overview
 
-x402 is the machine-to-machine payment protocol. This project uses x402 for agent payments in STX.
+This project implements x402-style payment protocol for Stacks, enabling machine-to-machine payments for agent services.
 
-## Supported Tokens
+## What is x402?
 
-- **STX** (native, primary)
-- **sBTC** (via SIP-010)
-- **USDCx** (via SIP-010)
+x402 is a payment protocol that:
+- Allows services to require payment for API access
+- Uses HTTP 402 Payment Required status code
+- Supports various payment methods (STX in our case)
 
-## x402 API Endpoints
+## How it works
 
-- **STX**: `https://x402-api.aibtc.dev/v1/stx`
-- **sBTC**: `https://x402-api.aibtc.dev/v1/sbtc`
-- **USDCx**: `https://x402-api.aibtc.dev/v1/usdcx`
-
-## Payment Flow
-
-1. Job is created with budget in STX
-2. Client funds the job via x402
-3. Provider submits work
-4. Evaluator verifies and releases payment
-5. Payment transferred via x402
+```
+Client                          Server
+  |                               |
+  | --- Request (no payment) ---> |
+  |                               |
+  | <--- 402 Payment Required -- |
+  |                               |
+  | --- Request + x402 headers -> |
+  |                               |
+  | <--- Response 200 OK --------- |
+```
 
 ## Implementation
 
-```typescript
-// x402 API call for STX payment
-const response = await fetch('https://x402-api.aibtc.dev/v1/stx', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    recipient: walletAddress,
-    amount: amountInStx,
-    job_id: jobId,
-  }),
-});
+### Payment Headers
+
+```
+X-X402-Version: 1.0
+X-X402-Network: stacks-testnet
+X-X402-Amount: 1000
+X-X402-Destination: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+X-X402-Job-Id: 1
+X-X402-Memo: Payment for job #1
 ```
 
-## x402 Headers
+### Frontend Usage
 
-- `X-402-Amount`: Amount in micro-STX
-- `X-402-Recipient`: Recipient address
-- `X-402-Request-ID`: Unique request ID
+```tsx
+import { X402PaymentButton } from './components/X402PaymentButton';
 
-## Error Handling
+<X402PaymentButton
+  jobId={1}
+  amount={1000}
+  destination="ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM"
+  onSuccess={(result) => console.log('Payment:', result)}
+  onError={(error) => console.error('Payment failed:', error)}
+/>
+```
 
-- `402 Payment Required`: Payment needed
-- `403 Forbidden`: Not authorized
-- `500 Internal Server Error`: API error
+### API Middleware
 
-## Testing
+```tsx
+import { x402Middleware } from './middleware/x402';
 
-1. Deploy contracts to testnet
-2. Create test job with x402 funding
-3. Verify payment via x402 API
-4. Test complete/reject flow
+export async function POST(req: NextRequest) {
+  const paymentResult = await x402Middleware(req);
+  
+  if (!paymentResult.success) {
+    return paymentResult.response;
+  }
+  
+  // Process the request...
+}
+```
+
+### Service Integration
+
+```tsx
+import { createPaymentRequest, executeX402Payment } from './services/x402';
+
+const request = createPaymentRequest(
+  1000,  // amount in STX
+  'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+  1      // jobId
+);
+
+const result = await executeX402Payment(request);
+```
+
+## Files
+
+- `App/src/services/x402.ts` - Core x402 logic
+- `App/src/middleware/x402.ts` - Next.js API middleware
+- `App/src/components/X402PaymentButton.tsx` - Payment UI component
+
+## Future Enhancements
+
+- [ ] Support for multiple payment tokens
+- [ ] Payment channel support for micropayments
+- [ ] Automatic retry mechanism
+- [ ] Payment receipt NFTs

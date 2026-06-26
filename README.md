@@ -2,108 +2,261 @@
 
 Agent infrastructure on Stacks: Agent identity registry + job escrow with x402 payments.
 
-## What is this?
+## Overview
 
 This project implements decentralized agent infrastructure on Stacks:
 
-- **Agent Registry**: On-chain identity for AI agents with upgradability support (port of ERC-8004 Identity to Stacks)
-- **Agentic Commerce**: Job escrow with budget, provider, evaluator, and x402 payments with upgradability support (port of EIP-8183 to Stacks)
+- **Agent Registry**: On-chain identity for AI agents (ERC-8004 equivalent for Stacks)
+- **Agentic Commerce**: Job escrow with x402-style STX payments (ERC-8183 equivalent for Stacks)
+- **Upgradability**: Registry/implementation pattern for future enhancements
 
-Built by specialized AI agents in <20 hours.
+## Features
 
-## Upgradability
+### Agent Registry
+- Register agents with name, description, wallet, endpoints
+- Update agent metadata (name, description, wallet)
+- Deactivate agents
+- Query agents by ID
+- Protocol caller access control
 
-The contracts use the registry/implementation pattern:
-
-1. **Registry contract**: stores state and access control
-2. **Implementation contract**: logic that can be upgraded
-3. **Owner**: only one who can call `upgrade-implementation(new-impl)`
-
-See [STATUS.md](STATUS.md) for detailed project status.
+### Agentic Commerce
+- Create jobs with evaluator, provider, description, expiration
+- Set budget in STX
+- Fund jobs with STX escrow
+- Assign providers
+- Submit work deliverables
+- Complete jobs (release escrow to provider)
+- Reject jobs (refund escrow to client)
+- Expire jobs (auto-refund if funded)
 
 ## Architecture
 
 ```
 Stacks-Agentic-Commerce/
-├── App/              # Next.js App Router (frontend)
-├── Contracts/        # Smart contracts (Clarity)
+├── App/                    # Next.js frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── agents/     # Agent registry UI
+│   │   │   ├── jobs/       # Job escrow UI
+│   │   │   └── page.tsx     # Home page
+│   │   ├── components/
+│   │   │   ├── WalletConnect.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   ├── ErrorMessage.tsx
+│   │   │   ├── StatusBadge.tsx
+│   │   │   └── TransactionButton.tsx
+│   │   ├── services/
+│   │   │   ├── agent-registry.ts
+│   │   │   └── agentic-commerce.ts
+│   │   └── constants/
+│   │       ├── contract.ts
+│   │       └── network.ts
+├── contracts/              # Clarity smart contracts
 │   ├── agent-registry.clar
 │   └── agentic-commerce.clar
-├── Agent/            # Agent scripts
-└── README.md
+├── tests/
+│   ├── agent-registry.test.ts
+│   ├── agentic-commerce.test.ts
+│   └── contract/             # Unit tests
+│       ├── agent-registry.test.ts
+│       └── agentic-commerce.test.ts
+├── docs/
+│   ├── DEPLOY_TESTNET.md
+│   ├── ARCHITECTURE.md
+│   └── ...
+└── settings/
+    ├── Devnet.toml
+    ├── Testnet.toml
+    └── Mainnet.toml
 ```
 
 ## Smart Contracts
 
-### Agent Registry (Upgradable)
+### Agent Registry (`agent-registry.clar`)
 
-Patrón de upgradability: Registry (estado) + Logic (impl).
+```clarity
+;; Register new agent
+(define-public (register-agent
+  (name (string-ascii 64))
+  (description (string-ascii 256))
+  (wallet principal)
+  (endpoints (list 10 {name: (string-ascii 32), url: (string-ascii 128)}))
+))
 
-- **Registry contract**: guarda el estado (agents, owner, protocol-callers)
-- **Upgrade function**: `upgrade-implementation(new-impl)` - solo owner
-- **Access control**: `is-owner()`, `is-protocol-caller()`
+;; Get agent by ID
+(define-read-only (get-agent (agent-id uint)))
 
-Register agents with metadata:
-- Name, description
-- Creator principal
-- Wallet address
-- Endpoints (A2A, MCP, web)
-- Active/inactive status
+;; Update agent metadata
+(define-public (update-agent
+  (agent-id uint)
+  (new-name (optional (string-ascii 64)))
+  (new-description (optional (string-ascii 256)))
+  (new-wallet (optional principal))
+))
 
-### Agentic Commerce (Upgradable)
+;; Deactivate agent
+(define-public (deactivate-agent (agent-id uint)))
+```
 
-Patrón de upgradabilidad: Registry (estado) + Logic (impl).
+### Agentic Commerce (`agentic-commerce.clar`)
 
-- **Registry contract**: guarda el estado (jobs, job-counter, owner, protocol-callers)
-- **Upgrade function**: `upgrade-implementation(new-impl)` - solo owner
-- **Access control**: `is-owner()`, `is-protocol-caller()`
+```clarity
+;; Create job
+(define-public (create-job
+  (provider (optional principal))
+  (evaluator principal)
+  (expired-at uint)
+  (description (string-ascii 512))
+))
 
-Job escrow with 6 states:
-- Open → Funded → Submitted → Completed/Rejected/Expired
-- Client funds, Provider submits, Evaluator verifies
-- Payments in STX (x402 compatible)
+;; Set budget
+(define-public (set-budget (job-id uint) (amount uint)))
+
+;; Fund job (STX transfer to escrow)
+(define-public (fund-job (job-id uint)))
+
+;; Assign provider
+(define-public (assign-provider (job-id uint) (provider principal)))
+
+;; Submit work
+(define-public (submit-work (job-id uint) (deliverable (buff 64))))
+
+;; Complete job (release escrow)
+(define-public (complete-job (job-id uint)))
+
+;; Reject job (refund client)
+(define-public (reject-job (job-id uint)))
+
+;; Expire job (auto-refund if funded)
+(define-public (expire-job (job-id uint)))
+```
+
+## Job Lifecycle
+
+```
+Open → Funded → Submitted → Completed
+                    ↓
+                Rejected
+                    ↓
+                Expired
+```
+
+| Status | Actions Allowed |
+|--------|----------------|
+| Open | set-budget, fund-job, expire-job |
+| Funded | assign-provider, submit-work, expire-job |
+| Submitted | complete-job, reject-job |
+| Completed | (final) |
+| Rejected | (final) |
+| Expired | (final) |
 
 ## Tech Stack
 
-- **Smart Contracts**: Clarity (Stx) with upgradability pattern
-- **Frontend**: Next.js (App Router)
-- **Wallet**: Hiro Wallet, Leather
-- **Payments**: STX via x402
+- **Smart Contracts**: Clarity on Stacks
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Wallet Integration**: @stacks/connect-react, @stacks/transactions
+- **Testing**: Vitest, Clarinet
+- **Network**: Stacks Testnet (nakamoto-testnet)
 
 ## Getting Started
 
-1. Clone the repo
-2. `cd Contracts && clarinet check`
-3. `cd .. && npm install`
-4. `npm run dev`
+### Prerequisites
 
-## Deployment
+- Node.js 18+
+- Clarinet CLI
+- A Stacks wallet (Hiro/Leather recommended)
 
-- Testnet: Deploy contracts to Stacks Testnet
-- Mainnet: Deploy contracts to Stacks Mainnet after audit
+### Installation
+
+```bash
+# Clone repo
+git clone https://github.com/JulioMCruz/Stacks-Agentic-Commerce.git
+cd Stacks-Agentic-Commerce
+
+# Install dependencies
+cd App && npm install
+
+# Run contract validation
+cd .. && clarinet check
+```
+
+### Development
+
+```bash
+# Run frontend locally
+cd App && npm run dev
+
+# Run contract tests
+clarinet test
+```
+
+### Testnet Deployment
+
+1. Configure `settings/Testnet.toml` with your mnemonic
+2. Request testnet STX from [Hiro Faucet](https://platform.hiro.so/faucet)
+3. Deploy contracts:
+   ```bash
+   clarinet deployments apply --testnet
+   ```
+4. Update frontend contract addresses in `App/src/constants/contract.ts`
+
+## Testing
+
+### Contract Tests
+
+```bash
+# Run all tests
+clarinet test
+
+# Run specific test file
+clarinet test tests/agent-registry.test.ts
+```
+
+### Frontend Tests
+
+```bash
+cd App
+npm test
+```
+
+## Contract Addresses
+
+### Testnet
+- `agent-registry`: `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.agent-registry`
+- `agentic-commerce`: `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.agentic-commerce`
+
+*(Replace with actual deployed addresses)*
 
 ## Upgradability
 
-Los contratos usan el patrón de registry/implementation:
+The contracts use the registry/implementation pattern:
 
-1. **Registry contract**: guarda estado (agents, jobs) y control de acceso
-2. **Implementation contract**: lógica que puede ser actualizada
-3. **Owner**: único que puede llamar `upgrade-implementation(new-impl)`
+1. **Registry contract**: Stores state (agents, jobs) and access control
+2. **Implementation contract**: Business logic that can be upgraded
+3. **Owner**: Can call `upgrade-implementation(new-impl)` to point to new logic
 
-## Status
+This allows fixing bugs and adding features without losing state.
 
-Alpha - Contracts implemented, frontend in progress.
+## Security
 
-## Next Steps
+- Owner-only upgrade function
+- Protocol caller access control
+- Status validation on state transitions
+- Principal validation (client/provider/evaluator)
+- Escrow balance tracking
+- Refund on rejection/expiration
 
-1. Deploy to Stacks Testnet
-2. Frontend integration with contracts
-3. User testing
-4. Mainnet deployment after audit
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `clarinet check && clarinet test`
+5. Submit a pull request
 
 ## Project Status
 
-See [STATUS.md](STATUS.md) for detailed status information.
+See [STATUS.md](STATUS.md) for detailed project status.
 
 ## License
 
