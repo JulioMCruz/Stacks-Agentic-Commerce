@@ -1,6 +1,11 @@
-# Stacks Agentic Commerce - Frontend Integration
+# Frontend Integration Guide
 
-## Wallet Connect
+## Contracts Addresses
+
+- **Agent Registry**: `ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.agent-registry`
+- **Agentic Commerce**: `ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.agentic-commerce`
+
+## Wallet Integration
 
 - Hiro Wallet
 - Leather
@@ -9,13 +14,8 @@
 
 - x402 API: `https://x402-api.aibtc.dev`
 
-## Contract Addresses
-
-- Agent Registry: `ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.agent-registry`
-- Agentic Commerce: `ST3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.agentic-commerce`
-
 ## Next Steps
 
-1. Connect wallet
-2. Call contract functions
-3. Handle x402 payments
+- Connect wallet to frontend
+- Call contract functions from frontend
+- Handle STX payments via x402
