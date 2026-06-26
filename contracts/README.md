@@ -42,11 +42,22 @@ Reputation protocol-caller wiring: [`0118385d…`](https://explorer.hiro.so/txid
 Deployed with [`scripts/deploy-testnet.mjs`](../scripts/deploy-testnet.mjs) (Stacks.js, reads the
 gitignored `.env`).
 
-### Mainnet — pending deployment
+### Mainnet — deployed ✅
 
-Replace the default mnemonic in `settings/Mainnet.toml` with the PerkOS wallet **before** deploying
-(never ship mainnet with the default test key). Mainnet addresses use the `SP…` form:
-`SP….<contract-name>`.
+Deployer `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH` (PerkOS wallet). All four contracts are live on
+Stacks mainnet; the commerce contract is registered as a reputation protocol-caller.
+
+| Contract | Address | Deploy tx |
+|----------|---------|-----------|
+| agent-registry | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agent-registry` | [`7bb6aa75…`](https://explorer.hiro.so/txid/7bb6aa75310374e685601ccd759a2638b92ca1e1c229d8a0d8c496a65f894bb0?chain=mainnet) |
+| reputation-registry | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.reputation-registry` | [`15e652b1…`](https://explorer.hiro.so/txid/15e652b1fe65027941ab4886c97f8a44107dfcd1f297c46d00929caf1161a966?chain=mainnet) |
+| validation-registry | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.validation-registry` | [`6dbfb4da…`](https://explorer.hiro.so/txid/6dbfb4da10acf9ef8caf94d356cce60e7a40c3abbf19f02014b1ee7b11129949?chain=mainnet) |
+| agentic-commerce | `SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agentic-commerce` | [`1f1cbe7d…`](https://explorer.hiro.so/txid/1f1cbe7df381edd10d33b5e6aac7f94a0eec08a87b43daf2774da940d2660731?chain=mainnet) |
+
+Reputation protocol-caller wiring: [`50dde25f…`](https://explorer.hiro.so/txid/50dde25f679d657555888b075d6d72b24b9c710e4dc5197700fe38f02bbdb316?chain=mainnet)
+
+Deployed with [`scripts/deploy-mainnet.mjs`](../scripts/deploy-mainnet.mjs). The deployer is the
+PerkOS wallet, so it is also the contract owner (no handoff needed).
 
 ### Required post-deploy step
 
