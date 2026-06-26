@@ -1,24 +1,47 @@
-# Deployment Guide
+# Stacks Agentic Commerce - Deployment Guide
 
-## Testnet
+## Prerequisites
 
-1. Update `Clarinet.toml` to use testnet configuration
-2. Run `clarinet test --net=testnet`
-3. Run `clarinet deploy --net=testnet`
+- Node.js 18+
+- Clarinet installed
 
-## Mainnet
+## Installation
 
-1. Update `Clarinet.toml` to use mainnet configuration
-2. Run `clarinet check`
-3. Run `clarinet test`
-4. Deploy via Hiro wallet or Clarinet
-
-## Upgradability
-
-After initial deployment, upgrades are handled via:
-
-```clarity
-(upgrade-implementation new-impl-principal)
+```bash
+npm install -g clarinet
 ```
 
-Only the owner can call this function.
+## Validate Contracts
+
+```bash
+cd contracts
+clarinet check
+```
+
+## Run Tests
+
+```bash
+clarinet test
+```
+
+## Deploy to Testnet
+
+1. Update `Clarinet.toml` with testnet configuration
+2. Run:
+```bash
+clarinet deploy --network testnet
+```
+
+## Deploy to Mainnet
+
+1. Complete security audit
+2. Update `Clarinet.toml` with mainnet configuration
+3. Run:
+```bash
+clarinet deploy --network mainnet
+```
+
+## Update Frontend
+
+After deployment, update contract addresses in:
+- `app/src/constants/contract.ts`
