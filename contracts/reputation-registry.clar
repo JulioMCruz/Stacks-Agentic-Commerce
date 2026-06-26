@@ -8,7 +8,6 @@
 (define-constant ERR_NOT_AUTHORIZED (err u101))
 (define-constant ERR_AGENT_NOT_FOUND (err u102))
 (define-constant ERR_INVALID_RATING (err u103))
-(define-constant ERR_ALREADY_RATED (err u104))
 
 ;; ============================================
 ;; Data vars
