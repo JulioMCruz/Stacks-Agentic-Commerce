@@ -90,7 +90,7 @@ export default function JobsPage() {
         ],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {
@@ -122,7 +122,7 @@ export default function JobsPage() {
         functionArgs: [uintCV(jobId), uintCV(parseInt(actionForm.budget))],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {
@@ -154,7 +154,7 @@ export default function JobsPage() {
         functionArgs: [uintCV(jobId), principalCV(actionForm.provider)],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {
@@ -184,7 +184,7 @@ export default function JobsPage() {
         functionArgs: [uintCV(jobId)],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {
@@ -216,7 +216,7 @@ export default function JobsPage() {
         ],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {
@@ -245,7 +245,7 @@ export default function JobsPage() {
         functionArgs: [uintCV(jobId)],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {
@@ -274,7 +274,7 @@ export default function JobsPage() {
         functionArgs: [uintCV(jobId)],
         network: NETWORK,
         appDetails: {
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         },
         onFinish: (data) => {

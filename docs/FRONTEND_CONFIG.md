@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Frontend Configuration
+# PerkOS Stacks Agentic Commerce - Frontend Configuration
 
 ## Environment Variables
 

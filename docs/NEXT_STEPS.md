@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Next Steps
+# PerkOS Stacks Agentic Commerce - Next Steps
 
 ## What's Done
 

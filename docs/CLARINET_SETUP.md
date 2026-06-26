@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Clarinet Setup Guide
+# PerkOS Stacks Agentic Commerce - Clarinet Setup Guide
 
 ## Prerequisites
 

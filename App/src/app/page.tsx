@@ -8,7 +8,7 @@ export default function Home() {
         {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Stacks Agentic Commerce
+            PerkOS Stacks Agentic Commerce
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6">
             Decentralized agent infrastructure on Stacks. 
@@ -22,7 +22,7 @@ export default function Home() {
               Launch Dashboard
             </Link>
             <a
-              href="https://github.com/JulioMCruz/Stacks-Agentic-Commerce"
+              href="https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
@@ -36,7 +36,7 @@ export default function Home() {
         <div className="flex justify-center mb-12">
           <ConnectButton
             appDetails={{
-              name: "Stacks Agentic Commerce",
+              name: "PerkOS Stacks Agentic Commerce",
               icon: "https://your-icon-url.com/logo.png",
             }}
             onSignIn={(profile) => {

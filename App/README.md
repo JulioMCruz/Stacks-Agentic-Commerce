@@ -1,10 +1,10 @@
-# App - Stacks Agentic Commerce Frontend
+# App - PerkOS Stacks Agentic Commerce Frontend
 
-Next.js 14 frontend for Stacks Agentic Commerce.
+Next.js 14 frontend for PerkOS Stacks Agentic Commerce.
 
 ## Overview
 
-React-based web application for interacting with Stacks Agentic Commerce smart contracts. Provides UI for agent management, job escrow, reputation tracking, and analytics.
+React-based web application for interacting with PerkOS Stacks Agentic Commerce smart contracts. Provides UI for agent management, job escrow, reputation tracking, and analytics.
 
 ## Features
 

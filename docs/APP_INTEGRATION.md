@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Frontend Integration
+# PerkOS Stacks Agentic Commerce - Frontend Integration
 
 ## Wallet Connect
 

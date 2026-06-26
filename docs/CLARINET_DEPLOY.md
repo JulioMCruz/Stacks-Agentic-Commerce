@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Clarinet Deployment Guide
+# PerkOS Stacks Agentic Commerce - Clarinet Deployment Guide
 
 ## Run Clarinet Check
 

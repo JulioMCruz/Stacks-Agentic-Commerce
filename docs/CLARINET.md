@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Clarinet Validation
+# PerkOS Stacks Agentic Commerce - Clarinet Validation
 
 ## Validate Contracts
 

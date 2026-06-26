@@ -1,6 +1,6 @@
 # Documentation
 
-Complete documentation for Stacks Agentic Commerce.
+Complete documentation for PerkOS Stacks Agentic Commerce.
 
 ## Available Guides
 

@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Project Status
+# PerkOS Stacks Agentic Commerce - Project Status
 
 ## Completed
 

@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Clarinet Validation Results
+# PerkOS Stacks Agentic Commerce - Clarinet Validation Results
 
 ## Run clarinet check
 

@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Frontend Components
+# PerkOS Stacks Agentic Commerce - Frontend Components
 
 ## AgentRegistry Component
 

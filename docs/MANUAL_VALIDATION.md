@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Manual Validation
+# PerkOS Stacks Agentic Commerce - Manual Validation
 
 ## Contracts Already Validated
 

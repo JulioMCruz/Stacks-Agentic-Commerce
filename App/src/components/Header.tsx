@@ -6,7 +6,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold">
-            Stacks Agentic Commerce
+            PerkOS Stacks Agentic Commerce
           </Link>
           <nav className="flex space-x-6">
             <Link href="/agents" className="hover:text-gray-300">
@@ -16,7 +16,7 @@ export default function Header() {
               Jobs
             </Link>
             <Link 
-              href="https://github.com/JulioMCruz/Stacks-Agentic-Commerce" 
+              href="https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce" 
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-gray-300"

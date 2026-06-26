@@ -49,7 +49,7 @@ export async function verifyAgent(
     ],
     network: NETWORK,
     appDetails: {
-      name: "Stacks Agentic Commerce",
+      name: "PerkOS Stacks Agentic Commerce",
       icon: "https://your-icon-url.com/logo.png",
     },
     onFinish: (data) => {

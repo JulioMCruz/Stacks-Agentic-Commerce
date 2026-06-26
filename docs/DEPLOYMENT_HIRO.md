@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Deployment Files
+# PerkOS Stacks Agentic Commerce - Deployment Files
 
 ## Deploy to Testnet via Hiro Wallet
 

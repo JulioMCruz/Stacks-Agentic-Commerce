@@ -7,7 +7,7 @@ export default function WalletConnect() {
     <div className="flex items-center space-x-2">
       <ConnectButton
         appDetails={{
-          name: "Stacks Agentic Commerce",
+          name: "PerkOS Stacks Agentic Commerce",
           icon: "https://your-icon-url.com/logo.png",
         }}
         onSignIn={(profile) => {

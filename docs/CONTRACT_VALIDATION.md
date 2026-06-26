@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Contract Validation
+# PerkOS Stacks Agentic Commerce - Contract Validation
 
 ## Agent Registry Contract
 

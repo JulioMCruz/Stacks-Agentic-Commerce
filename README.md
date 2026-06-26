@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce
+# PerkOS Stacks Agentic Commerce
 
 Agent infrastructure on Stacks: Decentralized identity registry + job escrow with x402-style STX payments.
 
@@ -33,7 +33,7 @@ Existing solutions are fragmented across different chains or lack Stacks-native 
 
 ## Solution Overview
 
-Stacks Agentic Commerce provides a complete infrastructure layer for AI agents on Stacks:
+PerkOS Stacks Agentic Commerce provides a complete infrastructure layer for AI agents on Stacks:
 
 ### Core Features
 
@@ -293,7 +293,7 @@ sequenceDiagram
 
 ```bash
 # Clone repository
-git clone https://github.com/JulioMCruz/Stacks-Agentic-Commerce.git
+git clone https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce.git
 cd Stacks-Agentic-Commerce
 
 # Install frontend dependencies

@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Test Results
+# PerkOS Stacks Agentic Commerce - Test Results
 
 ## Agent Registry Tests
 

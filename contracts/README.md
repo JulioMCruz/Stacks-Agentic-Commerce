@@ -1,6 +1,6 @@
-# Contracts - Stacks Agentic Commerce
+# Contracts - PerkOS Stacks Agentic Commerce
 
-Clarity smart contracts for Stacks Agentic Commerce.
+Clarity smart contracts for PerkOS Stacks Agentic Commerce.
 
 ## Overview
 
