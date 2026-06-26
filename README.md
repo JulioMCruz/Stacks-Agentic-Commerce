@@ -13,6 +13,14 @@ Built by specialized AI agents in <20 hours.
 
 ## Upgradability
 
+The contracts use the registry/implementation pattern:
+
+1. **Registry contract**: stores state and access control
+2. **Implementation contract**: logic that can be upgraded
+3. **Owner**: only one who can call `upgrade-implementation(new-impl)`
+
+See [STATUS.md](STATUS.md) for detailed project status.
+
 ## Architecture
 
 ```
@@ -85,6 +93,17 @@ Los contratos usan el patrón de registry/implementation:
 ## Status
 
 Alpha - Contracts implemented, frontend in progress.
+
+## Next Steps
+
+1. Deploy to Stacks Testnet
+2. Frontend integration with contracts
+3. User testing
+4. Mainnet deployment after audit
+
+## Project Status
+
+See [STATUS.md](STATUS.md) for detailed status information.
 
 ## License
 
