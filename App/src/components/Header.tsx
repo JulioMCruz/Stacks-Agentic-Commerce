@@ -8,6 +8,7 @@ import WalletConnect from "./WalletConnect";
 const NAV = [
   { href: "/agents", label: "Agents" },
   { href: "/jobs", label: "Jobs" },
+  { href: "/stats", label: "Stats" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/analytics", label: "Analytics" },
 ];

@@ -1,0 +1,23 @@
+{
+  "chain": "stacks",
+  "uuid": "perkos-register-agent",
+  "name": "PerkOS new agent registrations",
+  "version": 1,
+  "networks": {
+    "mainnet": {
+      "if_this": {
+        "scope": "contract_call",
+        "contract_identifier": "SP2K7PV5NXBNRV510S6DCA6RFMTFHAF3ZPK6ZSXPH.agent-registry",
+        "method": "register-agent"
+      },
+      "then_that": {
+        "http_post": {
+          "url": "https://stacks.perkos.xyz/api/chainhook",
+          "authorization_header": "Bearer CHANGE_ME"
+        }
+      },
+      "start_block": 1,
+      "decode_clarity_values": true
+    }
+  }
+}
