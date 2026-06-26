@@ -1,7 +1,7 @@
-import { x402API, StxPayment, PaymentResponse } from '../utils/x402';
+import { x402API, PaymentRequest, PaymentResponse } from './x402';
 
 export async function fundJobWithSTX(jobId: number, amount: number, walletAddress: string): Promise<PaymentResponse> {
-  const payment: StxPayment = {
+  const payment: PaymentRequest = {
     jobId: jobId,
     recipient: walletAddress,
     amount: amount,
@@ -17,7 +17,7 @@ export async function checkJobPayment(jobId: number): Promise<boolean> {
 }
 
 export async function releasePayment(jobId: number, amount: number, providerAddress: string): Promise<PaymentResponse> {
-  const payment: StxPayment = {
+  const payment: PaymentRequest = {
     jobId: jobId,
     recipient: providerAddress,
     amount: amount,

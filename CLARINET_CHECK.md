@@ -1,4 +1,4 @@
-# Stacks Agentic Commerce - Clarinet Validation Results
+# Stacks Agentic Commerce - Clarinet Check Results
 
 ## Run clarinet check
 
@@ -7,27 +7,15 @@ cd contracts
 clarinet check
 ```
 
-### Output
+## Expected Results
 
 - [x] agent-registry.clar: Syntax valid
 - [x] agentic-commerce.clar: Syntax valid
 - [x] agent-registry-impl.clar: Syntax valid
 - [x] agentic-commerce-impl.clar: Syntax valid
 
-## Run clarinet test
-
-```bash
-clarinet test
-```
-
-### Expected Tests
-
-- [x] Agent Registry: register-agent, get-agent, agent-count
-- [x] Agentic Commerce: create-job, set-budget, fund-job, submit-work, complete-job, reject-job
-- [x] Upgrade: upgrade-implementation by owner only
-
 ## Next Steps
 
-1. Deploy to testnet
-2. Frontend integration
-3. x402 payment testing
+1. Run `clarinet test`
+2. Deploy to testnet
+3. Frontend integration testing
