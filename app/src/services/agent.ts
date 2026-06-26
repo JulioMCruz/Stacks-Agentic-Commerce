@@ -1,7 +1,5 @@
-import { Cl, uintCV } from '@stacks/transactions';
+import { Cl } from '@stacks/transactions';
 import { AgentRegistryContract } from '../constants/contract';
-
-const { address: contractAddress, name: contractName } = AgentRegistryContract;
 
 export function registerAgent(
   name: string,
@@ -17,8 +15,8 @@ export function registerAgent(
   ];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgentRegistryContract.address,
+    contractName: AgentRegistryContract.name,
     functionName: 'register-agent',
     functionArgs: args,
   };
@@ -28,8 +26,8 @@ export function getAgent(agentId: number) {
   const args = [Cl.uint(agentId)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgentRegistryContract.address,
+    contractName: AgentRegistryContract.name,
     functionName: 'get-agent',
     functionArgs: args,
   };
@@ -37,8 +35,8 @@ export function getAgent(agentId: number) {
 
 export function agentCount() {
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgentRegistryContract.address,
+    contractName: AgentRegistryContract.name,
     functionName: 'agent-count',
     functionArgs: [],
   };
@@ -58,8 +56,8 @@ export function updateAgent(
   ];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgentRegistryContract.address,
+    contractName: AgentRegistryContract.name,
     functionName: 'update-agent',
     functionArgs: args,
   };
@@ -69,8 +67,8 @@ export function deactivateAgent(agentId: number) {
   const args = [Cl.uint(agentId)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgentRegistryContract.address,
+    contractName: AgentRegistryContract.name,
     functionName: 'deactivate-agent',
     functionArgs: args,
   };

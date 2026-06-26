@@ -1,7 +1,5 @@
-import { Cl, uintCV } from '@stacks/transactions';
+import { Cl } from '@stacks/transactions';
 import { AgenticCommerceContract } from '../constants/contract';
-
-const { address: contractAddress, name: contractName } = AgenticCommerceContract;
 
 export function createJob(
   client: string,
@@ -17,8 +15,8 @@ export function createJob(
   ];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'create-job',
     functionArgs: args,
   };
@@ -28,8 +26,8 @@ export function setBudget(jobId: number, amount: number) {
   const args = [Cl.uint(jobId), Cl.uint(amount)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'set-budget',
     functionArgs: args,
   };
@@ -39,8 +37,8 @@ export function fundJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'fund-job',
     functionArgs: args,
   };
@@ -50,8 +48,8 @@ export function submitWork(jobId: number, deliverable: string) {
   const args = [Cl.uint(jobId), Cl.buffer(deliverable)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'submit-work',
     functionArgs: args,
   };
@@ -61,8 +59,8 @@ export function completeJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'complete-job',
     functionArgs: args,
   };
@@ -72,8 +70,8 @@ export function rejectJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'reject-job',
     functionArgs: args,
   };
@@ -83,8 +81,8 @@ export function getJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
-    contractAddress,
-    contractName,
+    contractAddress: AgenticCommerceContract.address,
+    contractName: AgenticCommerceContract.name,
     functionName: 'get-job',
     functionArgs: args,
   };
