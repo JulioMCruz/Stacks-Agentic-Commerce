@@ -1,103 +1,162 @@
-import { describe, it, expect } from "vitest";
+import { Cl } from "@stacks/transactions";
+import { describe, expect, it } from "vitest";
 
-// Note: These tests require clarinet-sdk to run against a local devnet
-// Run with: clarinet test
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const client = accounts.get("wallet_1")!;
+const provider = accounts.get("wallet_2")!;
+const evaluator = accounts.get("wallet_3")!;
 
-describe("Agentic Commerce Contract", () => {
-  
-  it("contract syntax is valid", () => {
-    // This test passes if clarinet check succeeds
-    expect(true).toBe(true);
+const BUDGET = 1_000_000; // 1 STX in micro-STX
+const C = "agentic-commerce";
+
+function stxTransfers(events: any[]) {
+  return events.filter((e) => e.event === "stx_transfer_event");
+}
+
+function createJob(sender = client) {
+  return simnet.callPublicFn(
+    C,
+    "create-job",
+    [
+      Cl.none(), // provider (optional) – assigned later
+      Cl.principal(evaluator),
+      Cl.uint(simnet.blockHeight + 1000),
+      Cl.stringAscii("Summarize the whitepaper"),
+    ],
+    sender
+  );
+}
+
+/** create -> set-budget -> fund, returns nothing (job id is always u1 in a fresh simnet) */
+function createAndFund() {
+  createJob();
+  simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], client);
+  return simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client);
+}
+
+function statusOf(jobId = 1): number {
+  const job: any = simnet.callReadOnlyFn(C, "get-job", [Cl.uint(jobId)], deployer)
+    .result;
+  // (ok tuple) -> value.status.value (string)
+  return Number(job.value.value.status.value);
+}
+
+describe("agentic-commerce – job lifecycle & escrow", () => {
+  it("happy path: create -> fund (escrow) -> assign -> submit -> complete (payout)", () => {
+    // create
+    expect(createJob().result).toBeOk(Cl.uint(1));
+    expect(statusOf()).toBe(0); // OPEN
+
+    // set budget
+    expect(
+      simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], client)
+        .result
+    ).toBeOk(Cl.bool(true));
+
+    // fund -> STX leaves client into the contract escrow
+    const fund = simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client);
+    expect(fund.result).toBeOk(Cl.bool(true));
+    const fundXfer = stxTransfers(fund.events);
+    expect(fundXfer.length).toBe(1);
+    expect(fundXfer[0].data.amount).toBe(String(BUDGET));
+    expect(fundXfer[0].data.sender).toBe(client);
+    expect(statusOf()).toBe(1); // FUNDED
+    expect(
+      simnet.callReadOnlyFn(C, "get-escrow-balance", [Cl.uint(1)], deployer).result
+    ).toBeOk(Cl.uint(BUDGET));
+
+    // assign provider (only client) + submit work (only provider)
+    expect(
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client)
+        .result
+    ).toBeOk(Cl.bool(true));
+    expect(
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("deliverable")], provider)
+        .result
+    ).toBeOk(Cl.bool(true));
+    expect(statusOf()).toBe(2); // SUBMITTED
+
+    // complete (only evaluator) -> escrow pays the provider
+    const complete = simnet.callPublicFn(C, "complete-job", [Cl.uint(1)], evaluator);
+    expect(complete.result).toBeOk(Cl.bool(true));
+    const payout = stxTransfers(complete.events);
+    expect(payout.length).toBe(1);
+    expect(payout[0].data.amount).toBe(String(BUDGET));
+    expect(payout[0].data.recipient).toBe(provider);
+    expect(statusOf()).toBe(3); // COMPLETED
+    // escrow cleared
+    expect(
+      simnet.callReadOnlyFn(C, "get-escrow-balance", [Cl.uint(1)], deployer).result
+    ).toBeOk(Cl.uint(0));
   });
 
-  describe("create-job", () => {
-    it("should create a new job with valid parameters", () => {
-      // Expected: (ok u1) - returns new job ID
-      expect(true).toBe(true);
-    });
+  it("reject on submitted work refunds the client", () => {
+    createAndFund();
+    simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+    simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("bad")], provider);
 
-    it("should fail with expired deadline", () => {
-      // Expected: ERR_JOB_EXPIRED (err u204)
-      expect(true).toBe(true);
-    });
+    const reject = simnet.callPublicFn(C, "reject-job", [Cl.uint(1)], evaluator);
+    expect(reject.result).toBeOk(Cl.bool(true));
+    const refund = stxTransfers(reject.events);
+    expect(refund.length).toBe(1);
+    expect(refund[0].data.amount).toBe(String(BUDGET));
+    expect(refund[0].data.recipient).toBe(client);
+    expect(statusOf()).toBe(4); // REJECTED
   });
 
-  describe("set-budget", () => {
-    it("should set budget when called by client", () => {
-      // Expected: (ok true)
-      expect(true).toBe(true);
-    });
+  it("expire refunds a funded job once past expiry", () => {
+    // short-lived job
+    simnet.callPublicFn(
+      C,
+      "create-job",
+      [Cl.none(), Cl.principal(evaluator), Cl.uint(simnet.blockHeight + 5), Cl.stringAscii("short job")],
+      client
+    );
+    simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], client);
+    simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client);
 
-    it("should fail with zero budget", () => {
-      // Expected: ERR_INVALID_BUDGET (err u205)
-      expect(true).toBe(true);
-    });
+    simnet.mineEmptyBlocks(10); // advance past expired-at
+
+    const expire = simnet.callPublicFn(C, "expire-job", [Cl.uint(1)], deployer);
+    expect(expire.result).toBeOk(Cl.bool(true));
+    const refund = stxTransfers(expire.events);
+    expect(refund.length).toBe(1);
+    expect(refund[0].data.recipient).toBe(client);
+    expect(statusOf()).toBe(5); // EXPIRED
   });
 
-  describe("fund-job", () => {
-    it("should transfer STX to escrow and update status", () => {
-      // Expected: (ok true), escrow balance = budget, status = FUNDED
-      expect(true).toBe(true);
+  describe("guards", () => {
+    it("cannot fund a job with no budget (ERR_INVALID_BUDGET u205)", () => {
+      createJob();
+      expect(
+        simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client).result
+      ).toBeErr(Cl.uint(205));
     });
 
-    it("should fail when not called by client", () => {
-      // Expected: ERR_NOT_CLIENT (err u207)
-      expect(true).toBe(true);
+    it("cannot fund twice (ERR_ALREADY_FUNDED u210)", () => {
+      createAndFund();
+      // second fund: job is no longer OPEN -> ERR_INVALID_STATUS u203
+      expect(
+        simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client).result
+      ).toBeErr(Cl.uint(203));
     });
 
-    it("should fail if job already funded", () => {
-      // Expected: ERR_ALREADY_FUNDED (err u210)
-      expect(true).toBe(true);
-    });
-  });
-
-  describe("submit-work", () => {
-    it("should update status to SUBMITTED", () => {
-      // Expected: (ok true), status = SUBMITTED
-      expect(true).toBe(true);
+    it("only the client can set the budget (ERR_NOT_CLIENT u207)", () => {
+      createJob();
+      expect(
+        simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], provider)
+          .result
+      ).toBeErr(Cl.uint(207));
     });
 
-    it("should fail when called by non-provider", () => {
-      // Expected: ERR_NOT_PROVIDER (err u208)
-      expect(true).toBe(true);
-    });
-  });
-
-  describe("complete-job", () => {
-    it("should transfer escrow to provider", () => {
-      // Expected: (ok true), provider receives budget, escrow = 0
-      expect(true).toBe(true);
-    });
-
-    it("should fail when called by non-evaluator", () => {
-      // Expected: ERR_NOT_EVALUATOR (err u209)
-      expect(true).toBe(true);
-    });
-  });
-
-  describe("reject-job", () => {
-    it("should refund escrow to client", () => {
-      // Expected: (ok true), client receives refund, escrow = 0
-      expect(true).toBe(true);
-    });
-  });
-
-  describe("expire-job", () => {
-    it("should expire job after deadline", () => {
-      // Expected: (ok true), status = EXPIRED
-      expect(true).toBe(true);
-    });
-
-    it("should refund escrow when expiring funded job", () => {
-      // Expected: client receives refund
-      expect(true).toBe(true);
-    });
-  });
-
-  describe("upgrade-implementation", () => {
-    it("should upgrade when called by owner", () => {
-      // Expected: (ok true)
-      expect(true).toBe(true);
+    it("only the evaluator can complete (ERR_NOT_EVALUATOR u209)", () => {
+      createAndFund();
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("x")], provider);
+      expect(
+        simnet.callPublicFn(C, "complete-job", [Cl.uint(1)], client).result
+      ).toBeErr(Cl.uint(209));
     });
   });
 });

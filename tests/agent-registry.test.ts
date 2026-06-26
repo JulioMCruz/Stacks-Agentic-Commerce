@@ -1,73 +1,126 @@
-import { describe, it, expect } from "vitest";
+import { Cl } from "@stacks/transactions";
+import { describe, expect, it } from "vitest";
 
-// Note: These tests require clarinet-sdk to run against a local devnet
-// Run with: clarinet test
+// `simnet` is a global injected by the clarinet vitest environment.
+// State is reset (snapshot/restored) before each test, so every test sets up its own data.
+const accounts = simnet.getAccounts();
+const deployer = accounts.get("deployer")!;
+const wallet1 = accounts.get("wallet_1")!;
+const wallet2 = accounts.get("wallet_2")!;
 
-describe("Agent Registry Contract", () => {
-  
-  it("contract syntax is valid", () => {
-    // This test passes if clarinet check succeeds
-    expect(true).toBe(true);
+const endpoints = Cl.list([
+  Cl.tuple({
+    name: Cl.stringAscii("web"),
+    url: Cl.stringAscii("https://agent.example"),
+  }),
+]);
+
+function registerAlice(sender = wallet1) {
+  return simnet.callPublicFn(
+    "agent-registry",
+    "register-agent",
+    [
+      Cl.stringAscii("Alice Agent"),
+      Cl.stringAscii("An autonomous trading agent"),
+      Cl.principal(wallet1),
+      endpoints,
+    ],
+    sender
+  );
+}
+
+const aliceTuple = (overrides: Record<string, any> = {}) =>
+  Cl.tuple({
+    name: Cl.stringAscii("Alice Agent"),
+    description: Cl.stringAscii("An autonomous trading agent"),
+    creator: Cl.principal(wallet1),
+    wallet: Cl.principal(wallet1),
+    active: Cl.bool(true),
+    endpoints,
+    ...overrides,
   });
 
-  describe("register-agent", () => {
-    it("should register a new agent with valid parameters", () => {
-      // TODO: Implement with clarinet-sdk
-      // Expected: (ok u1) - returns new agent ID
-      expect(true).toBe(true);
-    });
+describe("agent-registry", () => {
+  it("registers a new agent, returns id u1, and bumps the counter", () => {
+    const { result } = registerAlice();
+    expect(result).toBeOk(Cl.uint(1));
 
-    it("should fail with empty name", () => {
-      // Expected: ERR_INVALID_NAME (err u103)
-      expect(true).toBe(true);
-    });
-
-    it("should fail with empty description", () => {
-      // Expected: ERR_INVALID_DESCRIPTION (err u104)
-      expect(true).toBe(true);
-    });
+    expect(
+      simnet.callReadOnlyFn("agent-registry", "get-agent-count", [], deployer)
+        .result
+    ).toBeOk(Cl.uint(1));
   });
 
-  describe("get-agent", () => {
-    it("should return agent data for valid ID", () => {
-      // Expected: (ok {name, description, creator, wallet, active, endpoints})
-      expect(true).toBe(true);
-    });
-
-    it("should return error for non-existent ID", () => {
-      // Expected: ERR_AGENT_NOT_FOUND (err u102)
-      expect(true).toBe(true);
-    });
+  it("stores and reads the agent back via get-agent", () => {
+    registerAlice();
+    const { result } = simnet.callReadOnlyFn(
+      "agent-registry",
+      "get-agent",
+      [Cl.uint(1)],
+      deployer
+    );
+    expect(result).toBeOk(aliceTuple());
   });
 
-  describe("update-agent", () => {
-    it("should update agent data when called by creator", () => {
-      // Expected: (ok true)
-      expect(true).toBe(true);
-    });
-
-    it("should fail when called by non-creator", () => {
-      // Expected: ERR_NOT_AUTHORIZED (err u101)
-      expect(true).toBe(true);
-    });
+  it("rejects an empty name (ERR_INVALID_NAME u103)", () => {
+    const { result } = simnet.callPublicFn(
+      "agent-registry",
+      "register-agent",
+      [Cl.stringAscii(""), Cl.stringAscii("desc"), Cl.principal(wallet1), endpoints],
+      wallet1
+    );
+    expect(result).toBeErr(Cl.uint(103));
   });
 
-  describe("deactivate-agent", () => {
-    it("should deactivate agent when called by creator", () => {
-      // Expected: (ok true), agent.active = false
-      expect(true).toBe(true);
-    });
+  it("returns ERR_AGENT_NOT_FOUND (u102) for a missing agent", () => {
+    const { result } = simnet.callReadOnlyFn(
+      "agent-registry",
+      "get-agent",
+      [Cl.uint(999)],
+      deployer
+    );
+    expect(result).toBeErr(Cl.uint(102));
   });
 
-  describe("upgrade-implementation", () => {
-    it("should upgrade when called by owner", () => {
-      // Expected: (ok true)
-      expect(true).toBe(true);
-    });
+  it("only lets the creator update the agent (stranger -> u101)", () => {
+    registerAlice();
 
-    it("should fail when called by non-owner", () => {
-      // Expected: ERR_NOT_OWNER (err u100)
-      expect(true).toBe(true);
-    });
+    const stranger = simnet.callPublicFn(
+      "agent-registry",
+      "update-agent",
+      [Cl.uint(1), Cl.some(Cl.stringAscii("Hacked")), Cl.none(), Cl.none()],
+      wallet2
+    );
+    expect(stranger.result).toBeErr(Cl.uint(101));
+
+    const updated = simnet.callPublicFn(
+      "agent-registry",
+      "update-agent",
+      [Cl.uint(1), Cl.some(Cl.stringAscii("Alice v2")), Cl.none(), Cl.none()],
+      wallet1
+    );
+    expect(updated.result).toBeOk(Cl.bool(true));
+
+    expect(
+      simnet.callReadOnlyFn("agent-registry", "get-agent", [Cl.uint(1)], deployer)
+        .result
+    ).toBeOk(aliceTuple({ name: Cl.stringAscii("Alice v2") }));
+  });
+
+  it("lets the creator deactivate the agent", () => {
+    registerAlice();
+
+    const { result } = simnet.callPublicFn(
+      "agent-registry",
+      "deactivate-agent",
+      [Cl.uint(1)],
+      wallet1
+    );
+    expect(result).toBeOk(Cl.bool(true));
+
+    expect(
+      simnet.callReadOnlyFn("agent-registry", "get-agent", [Cl.uint(1)], deployer)
+        .result
+    ).toBeOk(aliceTuple({ active: Cl.bool(false) }));
   });
 });
