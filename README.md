@@ -6,8 +6,8 @@ Agent infrastructure on Stacks: Agent identity registry + job escrow with x402 p
 
 This project implements decentralized agent infrastructure on Stacks:
 
-- **Agent Registry**: On-chain identity for AI agents (port of ERC-8004 Identity to Stacks)
-- **Agentic Commerce**: Job escrow with budget, provider, evaluator, and x402 payments (port of EIP-8183 to Stacks)
+- **Agent Registry**: On-chain identity for AI agents with upgradability support (port of ERC-8004 Identity to Stacks)
+- **Agentic Commerce**: Job escrow with budget, provider, evaluator, and x402 payments with upgradability support (port of EIP-8183 to Stacks)
 
 Built by specialized AI agents in <20 hours.
 
@@ -25,7 +25,13 @@ Stacks-Agentic-Commerce/
 
 ## Smart Contracts
 
-### Agent Registry
+### Agent Registry (Upgradable)
+
+Patrón de upgradability: Registry (estado) + Logic (impl).
+
+- **Registry contract**: guarda el estado (agents, owner, protocol-callers)
+- **Upgrade function**: `upgrade-implementation(new-impl)` - solo owner
+- **Access control**: `is-owner()`, `is-protocol-caller()`
 
 Register agents with metadata:
 - Name, description
@@ -34,7 +40,13 @@ Register agents with metadata:
 - Endpoints (A2A, MCP, web)
 - Active/inactive status
 
-### Agentic Commerce
+### Agentic Commerce (Upgradable)
+
+Patrón de upgradabilidad: Registry (estado) + Logic (impl).
+
+- **Registry contract**: guarda el estado (jobs, job-counter, owner, protocol-callers)
+- **Upgrade function**: `upgrade-implementation(new-impl)` - solo owner
+- **Access control**: `is-owner()`, `is-protocol-caller()`
 
 Job escrow with 6 states:
 - Open → Funded → Submitted → Completed/Rejected/Expired
@@ -43,7 +55,7 @@ Job escrow with 6 states:
 
 ## Tech Stack
 
-- **Smart Contracts**: Clarity (Stx)
+- **Smart Contracts**: Clarity (Stx) with upgradability pattern
 - **Frontend**: Next.js (App Router)
 - **Wallet**: Hiro Wallet, Leather
 - **Payments**: STX via x402
@@ -59,6 +71,14 @@ Job escrow with 6 states:
 
 - Testnet: Deploy contracts to Stacks Testnet
 - Mainnet: Deploy contracts to Stacks Mainnet after audit
+
+## Upgradability
+
+Los contratos usan el patrón de registry/implementation:
+
+1. **Registry contract**: guarda estado (agents, jobs) y control de acceso
+2. **Implementation contract**: lógica que puede ser actualizada
+3. **Owner**: único que puede llamar `upgrade-implementation(new-impl)`
 
 ## Status
 
