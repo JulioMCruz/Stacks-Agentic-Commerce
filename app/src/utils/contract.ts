@@ -1,5 +1,5 @@
-import { Cl } from '@stacks/transactions';
-import { AgentRegistryContract, AgenticCommerceContract } from './contract';
+import { Cl, uintCV } from '@stacks/transactions';
+import { AgentRegistryContract, AgenticCommerceContract } from '../constants/contract';
 
 export function getAgentRegistryContract() {
   return {
