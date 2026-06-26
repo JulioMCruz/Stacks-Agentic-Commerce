@@ -1,0 +1,24 @@
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: https://api.testnet.hiro.so
+bitcoin-node: http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332
+plan:
+  batches:
+  - id: 0
+    transactions:
+    - transaction-type: contract-publish
+      contract-name: agent-registry
+      expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      cost: 48400
+      path: contracts/agent-registry.clar
+      anchor-block-only: true
+      clarity-version: 2
+    - transaction-type: contract-publish
+      contract-name: agentic-commerce
+      expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+      cost: 111770
+      path: contracts/agentic-commerce.clar
+      anchor-block-only: true
+      clarity-version: 2
+    epoch: '2.5'

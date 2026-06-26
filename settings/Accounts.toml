@@ -1,0 +1,7 @@
+[accounts.deployer]
+mnemonic = "test test test test test test test test test test test test"
+# Address: SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE
+
+[accounts.wallet_1]
+mnemonic = "test test test test test test test test test test test test"
+# Different derivation path for wallet_1

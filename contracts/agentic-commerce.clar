@@ -12,12 +12,12 @@
 (define-constant ERR_INVALID_STATUS (err u203))
 (define-constant ERR_JOB_EXPIRED (err u204))
 (define-constant ERR_INVALID_BUDGET (err u205))
-(define-constant ERR_TRANSFER_FAILED (err u206))
+;; (define-constant ERR_TRANSFER_FAILED (err u206))
 (define-constant ERR_NOT_CLIENT (err u207))
 (define-constant ERR_NOT_PROVIDER (err u208))
 (define-constant ERR_NOT_EVALUATOR (err u209))
 (define-constant ERR_ALREADY_FUNDED (err u210))
-(define-constant ERR_NOT_FUNDED (err u211))
+;; (define-constant ERR_NOT_FUNDED (err u211))
 
 ;; Status constants
 (define-constant STATUS_OPEN u0)
@@ -60,15 +60,15 @@
   (is-eq caller (var-get contract-owner))
 )
 
-(define-private (is-valid-status-transition (current uint) (next uint))
-  (or
-    (and (is-eq current STATUS_OPEN) (is-eq next STATUS_FUNDED))
-    (and (is-eq current STATUS_FUNDED) (is-eq next STATUS_SUBMITTED))
-    (and (is-eq current STATUS_SUBMITTED) (or (is-eq next STATUS_COMPLETED) (is-eq next STATUS_REJECTED)))
-    (and (is-eq current STATUS_OPEN) (is-eq next STATUS_EXPIRED))
-    (and (is-eq current STATUS_FUNDED) (is-eq next STATUS_EXPIRED))
-  )
-)
+;; (define-private (is-valid-status-transition (current uint) (next uint))
+;;   (or
+;;     (and (is-eq current STATUS_OPEN) (is-eq next STATUS_FUNDED))
+;;     (and (is-eq current STATUS_FUNDED) (is-eq next STATUS_SUBMITTED))
+;;     (and (is-eq current STATUS_SUBMITTED) (or (is-eq next STATUS_COMPLETED) (is-eq next STATUS_REJECTED)))
+;;     (and (is-eq current STATUS_OPEN) (is-eq next STATUS_EXPIRED))
+;;     (and (is-eq current STATUS_FUNDED) (is-eq next STATUS_EXPIRED))
+;;   )
+;; )
 
 ;; ============================================
 ;; Read-only functions
