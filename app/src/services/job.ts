@@ -3,7 +3,7 @@ import { AgenticCommerceContract } from '../constants/contract';
 
 const { address: contractAddress, name: contractName } = AgenticCommerceContract;
 
-export async function createJob(
+export function createJob(
   client: string,
   evaluator: string,
   expiredAt: number,
@@ -24,7 +24,7 @@ export async function createJob(
   };
 }
 
-export async function setBudget(jobId: number, amount: number) {
+export function setBudget(jobId: number, amount: number) {
   const args = [Cl.uint(jobId), Cl.uint(amount)];
   
   return {
@@ -35,7 +35,7 @@ export async function setBudget(jobId: number, amount: number) {
   };
 }
 
-export async function fundJob(jobId: number) {
+export function fundJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
@@ -46,7 +46,7 @@ export async function fundJob(jobId: number) {
   };
 }
 
-export async function submitWork(jobId: number, deliverable: string) {
+export function submitWork(jobId: number, deliverable: string) {
   const args = [Cl.uint(jobId), Cl.buffer(deliverable)];
   
   return {
@@ -57,7 +57,7 @@ export async function submitWork(jobId: number, deliverable: string) {
   };
 }
 
-export async function completeJob(jobId: number) {
+export function completeJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
@@ -68,7 +68,7 @@ export async function completeJob(jobId: number) {
   };
 }
 
-export async function rejectJob(jobId: number) {
+export function rejectJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {
@@ -79,7 +79,7 @@ export async function rejectJob(jobId: number) {
   };
 }
 
-export async function getJob(jobId: number) {
+export function getJob(jobId: number) {
   const args = [Cl.uint(jobId)];
   
   return {

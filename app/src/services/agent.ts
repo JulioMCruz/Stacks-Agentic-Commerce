@@ -3,7 +3,7 @@ import { AgentRegistryContract } from '../constants/contract';
 
 const { address: contractAddress, name: contractName } = AgentRegistryContract;
 
-export async function registerAgent(
+export function registerAgent(
   name: string,
   description: string,
   wallet: string,
@@ -24,7 +24,7 @@ export async function registerAgent(
   };
 }
 
-export async function getAgent(agentId: number) {
+export function getAgent(agentId: number) {
   const args = [Cl.uint(agentId)];
   
   return {
@@ -35,7 +35,7 @@ export async function getAgent(agentId: number) {
   };
 }
 
-export async function agentCount() {
+export function agentCount() {
   return {
     contractAddress,
     contractName,
@@ -44,7 +44,7 @@ export async function agentCount() {
   };
 }
 
-export async function updateAgent(
+export function updateAgent(
   agentId: number,
   name: string | null,
   description: string | null,
@@ -65,7 +65,7 @@ export async function updateAgent(
   };
 }
 
-export async function deactivateAgent(agentId: number) {
+export function deactivateAgent(agentId: number) {
   const args = [Cl.uint(agentId)];
   
   return {
