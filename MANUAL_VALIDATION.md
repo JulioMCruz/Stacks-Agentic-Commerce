@@ -1,6 +1,6 @@
-# Stacks Agentic Commerce - Deployment Guide
+# Stacks Agentic Commerce - Manual Validation
 
-## Manual Validation Results
+## Contracts Already Validated
 
 Both smart contracts have been validated:
 
@@ -44,6 +44,9 @@ clarinet check
 clarinet deploy --network testnet
 ```
 
-## Frontend Integration
+## Next Steps
 
-After deployment, update contract addresses in `app/src/constants/contract.ts`.
+1. Deploy contracts to testnet (use Hiro Wallet)
+2. Update frontend with deployed addresses
+3. Test wallet integration
+4. Test x402 payments
