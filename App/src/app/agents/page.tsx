@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ArrowLeft, Plus, Pencil, Power, Fingerprint } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
 import { request } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
@@ -81,9 +82,9 @@ export default function AgentsPage() {
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (!editingAgent) return;
-    
+
     setActiveAction(`updating-${editingAgent.id}`);
-    
+
     try {
       await request("stx_callContract", {
         contract: AGENT_REGISTRY,
@@ -135,115 +136,69 @@ export default function AgentsPage() {
     });
   }
 
+  const submitting = activeAction === "registering" || activeAction?.startsWith("updating");
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container-x py-12">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
+
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Link href="/" className="text-blue-600 hover:text-blue-800 mb-2 inline-block">
-            &larr; Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold">Agents Registry</h1>
-          <p className="text-gray-600">Discover and register AI agents on Stacks.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Agent Registry</h1>
+          <p className="mt-1.5 text-mist-300">On-chain identity for autonomous agents on Stacks.</p>
         </div>
         <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setEditingAgent(null);
-          }}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          onClick={() => { setShowForm(!showForm); setEditingAgent(null); }}
+          className={showForm ? "btn-ghost" : "btn-primary"}
           disabled={!!activeAction}
         >
-          {showForm ? "Cancel" : "Register Agent"}
+          {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Register Agent</>}
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-          <button onClick={loadAgents} className="ml-4 underline">Retry</button>
+        <div className="mt-6 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <span>{error}</span>
+          <button onClick={loadAgents} className="font-medium underline underline-offset-2">Retry</button>
         </div>
       )}
 
       {(showForm || editingAgent) && (
-        <form 
-          onSubmit={editingAgent ? handleUpdate : handleRegister} 
-          className="bg-gray-50 p-6 rounded-lg mb-6"
-        >
-          <h2 className="text-xl font-semibold mb-4">
-            {editingAgent ? "Update Agent" : "Register New Agent"}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={editingAgent ? handleUpdate : handleRegister} className="card mt-6 p-6">
+          <h2 className="text-lg font-semibold">{editingAgent ? "Update Agent" : "Register New Agent"}</h2>
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium mb-1">Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
+              <label className="label">Name</label>
+              <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="field" required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Wallet Address</label>
-              <input
-                type="text"
-                value={formData.wallet}
-                onChange={(e) => setFormData({ ...formData, wallet: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                placeholder="ST..."
-                required
-              />
+              <label className="label">Wallet Address</label>
+              <input type="text" value={formData.wallet} onChange={(e) => setFormData({ ...formData, wallet: e.target.value })} className="field font-mono" placeholder="ST…" required />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                rows={3}
-                required
-              />
+              <label className="label">Description</label>
+              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="field" rows={3} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Endpoint Name</label>
-              <input
-                type="text"
-                value={formData.endpointName}
-                onChange={(e) => setFormData({ ...formData, endpointName: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                placeholder="web, a2a, mcp"
-              />
+              <label className="label">Endpoint Name</label>
+              <input type="text" value={formData.endpointName} onChange={(e) => setFormData({ ...formData, endpointName: e.target.value })} className="field" placeholder="web, a2a, mcp" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Endpoint URL</label>
-              <input
-                type="url"
-                value={formData.endpointUrl}
-                onChange={(e) => setFormData({ ...formData, endpointUrl: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                placeholder="https://..."
-              />
+              <label className="label">Endpoint URL</label>
+              <input type="url" value={formData.endpointUrl} onChange={(e) => setFormData({ ...formData, endpointUrl: e.target.value })} className="field" placeholder="https://…" />
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <button
-              type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-              disabled={activeAction === "registering" || activeAction?.startsWith("updating")}
-            >
-              {activeAction === "registering" || activeAction?.startsWith("updating")
-                ? (editingAgent ? "Updating..." : "Registering...")
-                : (editingAgent ? "Update Agent" : "Submit Registration")
-              }
+          <div className="mt-5 flex gap-2">
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              {submitting ? (editingAgent ? "Updating…" : "Registering…") : (editingAgent ? "Update Agent" : "Submit Registration")}
             </button>
             {editingAgent && (
               <button
                 type="button"
-                onClick={() => {
-                  setEditingAgent(null);
-                  setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
-                }}
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+                onClick={() => { setEditingAgent(null); setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" }); }}
+                className="btn-ghost"
               >
                 Cancel
               </button>
@@ -253,60 +208,58 @@ export default function AgentsPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading agents...</p>
+        <div className="py-16 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-brand-400" />
+          <p className="mt-3 text-sm text-mist-500">Loading agents from chain…</p>
         </div>
       ) : agents.length === 0 ? (
-        <p className="text-gray-500">No agents registered yet. Be the first!</p>
+        <div className="card mt-6 p-12 text-center">
+          <Fingerprint className="mx-auto h-8 w-8 text-mist-500" strokeWidth={1.5} />
+          <p className="mt-3 text-mist-300">No agents registered yet. Be the first.</p>
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="mt-6 grid gap-4">
           {agents.map((agent) => (
-            <div key={agent.id} className="border rounded-lg p-4 hover:shadow-md">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold">{agent.name}</h3>
-                      <p className="text-gray-600 text-sm">{agent.description}</p>
-                    </div>
-                    <span className={`px-2 py-1 rounded text-xs ${agent.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {agent.active ? "Active" : "Inactive"}
-                    </span>
+            <div key={agent.id} className="card card-hover p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-brand-300">
+                    <Fingerprint className="h-5 w-5" strokeWidth={1.75} />
                   </div>
-                  <div className="mt-3 text-sm text-gray-500">
-                    <p><strong>Creator:</strong> {agent.creator}</p>
-                    <p><strong>Wallet:</strong> {agent.wallet}</p>
-                    {agent.endpoints.length > 0 && (
-                      <div className="mt-2">
-                        <p><strong>Endpoints:</strong></p>
-                        <ul className="list-disc list-inside">
-                          {agent.endpoints.map((ep, i) => (
-                            <li key={i}>{ep.name}: {ep.url}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => startEdit(agent)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                      disabled={!!activeAction}
-                    >
-                      Edit
-                    </button>
-                    {agent.active && (
-                      <button
-                        onClick={() => handleDeactivate(agent.id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-                        disabled={activeAction === `deactivating-${agent.id}`}
-                      >
-                        {activeAction === `deactivating-${agent.id}` ? "Deactivating..." : "Deactivate"}
-                      </button>
-                    )}
+                  <div>
+                    <h3 className="text-base font-semibold text-white">{agent.name}</h3>
+                    <p className="mt-0.5 text-sm text-mist-300">{agent.description}</p>
                   </div>
                 </div>
+                <span className={`badge ${agent.active ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-mist-500"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${agent.active ? "bg-emerald-400" : "bg-mist-500"}`} />
+                  {agent.active ? "Active" : "Inactive"}
+                </span>
+              </div>
+
+              <dl className="mt-4 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+                <div className="flex gap-2"><dt className="text-mist-500">Creator</dt><dd className="truncate font-mono text-xs text-mist-300">{agent.creator}</dd></div>
+                <div className="flex gap-2"><dt className="text-mist-500">Wallet</dt><dd className="truncate font-mono text-xs text-mist-300">{agent.wallet}</dd></div>
+              </dl>
+              {agent.endpoints.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {agent.endpoints.map((ep, i) => (
+                    <span key={i} className="rounded-md border border-white/[0.08] bg-white/[0.02] px-2 py-1 text-xs text-mist-300">
+                      <span className="text-mist-500">{ep.name}:</span> {ep.url}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-4 flex gap-2 border-t border-white/[0.06] pt-4">
+                <button onClick={() => startEdit(agent)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white" disabled={!!activeAction}>
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </button>
+                {agent.active && (
+                  <button onClick={() => handleDeactivate(agent.id)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10" disabled={activeAction === `deactivating-${agent.id}`}>
+                    <Power className="h-3.5 w-3.5" /> {activeAction === `deactivating-${agent.id}` ? "Deactivating…" : "Deactivate"}
+                  </button>
+                )}
               </div>
             </div>
           ))}

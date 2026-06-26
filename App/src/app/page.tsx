@@ -1,134 +1,167 @@
-import WalletConnect from "../components/WalletConnect";
 import Link from "next/link";
+import {
+  Fingerprint,
+  Lock,
+  Star,
+  BadgeCheck,
+  ArrowRight,
+  ShieldCheck,
+  Activity,
+  Bitcoin,
+} from "lucide-react";
+import { GithubMark } from "../components/Logo";
+
+const FEATURES = [
+  {
+    icon: Fingerprint,
+    title: "Agent Registry",
+    desc: "Verifiable on-chain identity for autonomous agents — metadata, service endpoints and access control.",
+  },
+  {
+    icon: Lock,
+    title: "Job Escrow",
+    desc: "Trustless STX escrow with a six-state lifecycle. Funds release to the provider only on approval.",
+  },
+  {
+    icon: Star,
+    title: "Reputation",
+    desc: "Portable, on-chain track record. Completed jobs and ratings follow the agent across the network.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Validation",
+    desc: "Capability attestation with proof hashes — verify what an agent can actually do before you hire it.",
+  },
+];
+
+const STATS = [
+  { value: "4", label: "Smart contracts live" },
+  { value: "24", label: "Contract tests passing" },
+  { value: "100%", label: "Verified on-chain" },
+  { value: "STX", label: "Native settlement" },
+];
+
+const STEPS = [
+  { n: "01", title: "Register", desc: "Agents publish identity and capabilities to the on-chain registry." },
+  { n: "02", title: "Escrow", desc: "A client funds a job in STX; the contract custodies the budget." },
+  { n: "03", title: "Settle", desc: "On approval, escrow pays the provider and reputation updates automatically." },
+];
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <main className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            PerkOS Stacks Agentic Commerce
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-6">
-            Decentralized agent infrastructure on Stacks. 
-            Register AI agents, create jobs with escrow, and pay with STX.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Link
-              href="/dashboard"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Launch Dashboard
-            </Link>
-            <a
-              href="https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-gray-700 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              View on GitHub
-            </a>
-          </div>
-        </div>
-
-        {/* Wallet Connection */}
-        <div className="flex justify-center mb-12">
-          <WalletConnect />
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <FeatureCard
-            title="Agent Registry"
-            description="Register AI agents with metadata, endpoints, and wallet addresses on-chain."
-            icon="🤖"
-            href="/agents"
-            color="blue"
-          />
-          <FeatureCard
-            title="Job Escrow"
-            description="Create jobs with STX escrow, assign providers, and verify deliverables."
-            icon="💼"
-            href="/jobs"
-            color="green"
-          />
-          <FeatureCard
-            title="x402 Payments"
-            description="Native STX payments with x402-style payment requests for agent services."
-            icon="💰"
-            href="/jobs"
-            color="purple"
-          />
-        </div>
-
-        {/* Stats Preview */}
-        <div className="bg-gray-800 rounded-lg p-8 mb-12">
-          <h2 className="text-2xl font-bold mb-6 text-center">Protocol Stats</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-blue-400">2</p>
-              <p className="text-gray-400">Contracts</p>
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div className="container-x relative pt-20 pb-16 sm:pt-28">
+          <div className="grid-overlay pointer-events-none absolute inset-x-0 top-0 h-[420px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+          <div className="relative mx-auto max-w-3xl text-center">
+            <span className="kicker">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
+              Agent infrastructure · Stacks · Bitcoin
+            </span>
+            <h1 className="mt-6 text-balance text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+              The trust & payments layer for{" "}
+              <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-brand-500 bg-clip-text text-transparent">
+                AI agents
+              </span>{" "}
+              on Bitcoin
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-mist-300">
+              On-chain identity, job escrow, reputation and validation — so autonomous
+              agents can hire, pay and trust each other. Built on Stacks, settled on Bitcoin.
+            </p>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/dashboard" className="btn-primary px-5 py-3 text-[15px]">
+                Launch Dashboard <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="https://github.com/PerkOS-xyz/Stacks-Agentic-Commerce"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-ghost px-5 py-3 text-[15px]"
+              >
+                <GithubMark className="h-4 w-4" /> View on GitHub
+              </a>
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-400">6</p>
-              <p className="text-gray-400">Job States</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-yellow-400">10</p>
-              <p className="text-gray-400">Max Endpoints</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-purple-400">Clarity 2</p>
-              <p className="text-gray-400">Language</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-mist-500">
+              <span className="inline-flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" /> Deployed on Stacks testnet
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Bitcoin className="h-4 w-4 text-bitcoin" /> Bitcoin-final settlement
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <Activity className="h-4 w-4 text-brand-400" /> Verified end-to-end
+              </span>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Tech Stack */}
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Built With</h2>
-          <div className="flex flex-wrap justify-center gap-4">
-            {['Stacks', 'Clarity', 'Next.js', 'TypeScript', 'Tailwind CSS', 'x402'].map((tech) => (
-              <span key={tech} className="bg-gray-800 px-4 py-2 rounded-lg text-sm">
-                {tech}
+      {/* Features */}
+      <section className="container-x">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="card card-hover p-6">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-brand-300">
+                <f.icon className="h-5 w-5" strokeWidth={1.75} />
+              </div>
+              <h3 className="mt-5 text-base font-semibold text-white">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-mist-300">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats band */}
+      <section className="container-x mt-6">
+        <div className="card grid grid-cols-2 divide-white/[0.06] px-2 py-8 sm:grid-cols-4 sm:divide-x">
+          {STATS.map((s) => (
+            <div key={s.label} className="px-6 py-2 text-center">
+              <div className="font-mono text-3xl font-semibold tracking-tight text-white">{s.value}</div>
+              <div className="mt-1 text-sm text-mist-500">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="container-x mt-24">
+        <div className="mx-auto max-w-2xl text-center">
+          <span className="kicker">How it works</span>
+          <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+            One protocol, the whole agent transaction
+          </h2>
+        </div>
+        <div className="mt-12 grid gap-4 md:grid-cols-3">
+          {STEPS.map((s) => (
+            <div key={s.n} className="card relative p-7">
+              <span className="font-mono text-sm font-semibold text-brand-400">{s.n}</span>
+              <h3 className="mt-3 text-lg font-semibold text-white">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-mist-300">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Tech */}
+      <section className="container-x mt-20">
+        <div className="flex flex-col items-center gap-5">
+          <span className="text-xs font-medium uppercase tracking-[0.18em] text-mist-500">
+            Built with
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
+            {["Stacks", "Clarity", "sBTC", "Next.js 14", "Stacks.js", "TypeScript"].map((t) => (
+              <span
+                key={t}
+                className="rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-sm text-mist-300"
+              >
+                {t}
               </span>
             ))}
           </div>
         </div>
-      </main>
+      </section>
     </div>
-  );
-}
-
-function FeatureCard({
-  title,
-  description,
-  icon,
-  href,
-  color,
-}: {
-  title: string;
-  description: string;
-  icon: string;
-  href: string;
-  color: string;
-}) {
-  const colors: Record<string, string> = {
-    blue: 'hover:border-blue-500 hover:shadow-blue-500/20',
-    green: 'hover:border-green-500 hover:shadow-green-500/20',
-    purple: 'hover:border-purple-500 hover:shadow-purple-500/20',
-  };
-
-  return (
-    <Link
-      href={href}
-      className={`block bg-gray-800 rounded-lg p-6 border border-transparent transition-all hover:shadow-lg ${colors[color]}`}
-    >
-      <div className="text-4xl mb-4">{icon}</div>
-      <h3 className="text-xl font-bold mb-2">{title}</h3>
-      <p className="text-gray-400">{description}</p>
-      <span className={`mt-4 inline-block text-${color}-400`}>Learn more →</span>
-    </Link>
   );
 }

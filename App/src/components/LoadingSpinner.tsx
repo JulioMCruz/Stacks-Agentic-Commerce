@@ -1,8 +1,8 @@
-export default function LoadingSpinner({ text = "Loading..." }: { text?: string }) {
+export default function LoadingSpinner({ text = "Loading…" }: { text?: string }) {
   return (
-    <div className="text-center py-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-      <p className="mt-2 text-gray-600">{text}</p>
+    <div className="container-x py-20 text-center">
+      <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-brand-400" />
+      <p className="mt-3 text-sm text-mist-500">{text}</p>
     </div>
   );
 }

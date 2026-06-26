@@ -2,31 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ArrowLeft, Plus, Briefcase } from "lucide-react";
 import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
+import StatusBadge from "../../components/StatusBadge";
 import { request } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
 import { NETWORK_NAME } from "../../constants/network";
 
 const AGENTIC_COMMERCE = `${CONTRACT_ADDRESS}.agentic-commerce` as `${string}.${string}`;
-
-const STATUS_LABELS: Record<number, string> = {
-  0: "Open",
-  1: "Funded",
-  2: "Submitted",
-  3: "Completed",
-  4: "Rejected",
-  5: "Expired",
-};
-
-const STATUS_COLORS: Record<number, string> = {
-  0: "bg-gray-100 text-gray-800",
-  1: "bg-yellow-100 text-yellow-800",
-  2: "bg-blue-100 text-blue-800",
-  3: "bg-green-100 text-green-800",
-  4: "bg-red-100 text-red-800",
-  5: "bg-gray-100 text-gray-500",
-};
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -41,11 +25,7 @@ export default function JobsPage() {
     budget: "",
     duration: "100",
   });
-  const [actionForm, setActionForm] = useState<{
-    jobId: number;
-    budget?: string;
-    provider?: string;
-  } | null>(null);
+  const [actionForm, setActionForm] = useState<{ jobId: number; budget?: string; provider?: string } | null>(null);
 
   useEffect(() => {
     loadJobs();
@@ -75,11 +55,11 @@ export default function JobsPage() {
   async function handleCreateJob(e: React.FormEvent) {
     e.preventDefault();
     setActiveAction("creating");
-    
+
     try {
       const currentBlock = 1000; // TODO: Get actual block height from network
       const expiredAt = currentBlock + parseInt(formData.duration);
-      
+
       await request("stx_callContract", {
         contract: AGENTIC_COMMERCE,
         functionName: "create-job",
@@ -103,7 +83,7 @@ export default function JobsPage() {
   async function handleSetBudget(jobId: number) {
     if (!actionForm?.budget) return;
     setActiveAction(`setting-budget-${jobId}`);
-    
+
     try {
       await request("stx_callContract", {
         contract: AGENTIC_COMMERCE,
@@ -123,7 +103,7 @@ export default function JobsPage() {
   async function handleAssignProvider(jobId: number) {
     if (!actionForm?.provider) return;
     setActiveAction(`assigning-provider-${jobId}`);
-    
+
     try {
       await request("stx_callContract", {
         contract: AGENTIC_COMMERCE,
@@ -163,10 +143,7 @@ export default function JobsPage() {
       await request("stx_callContract", {
         contract: AGENTIC_COMMERCE,
         functionName: "submit-work",
-        functionArgs: [
-          Cl.uint(jobId),
-          Cl.bufferFromAscii("work-submitted"),
-        ],
+        functionArgs: [Cl.uint(jobId), Cl.bufferFromAscii("work-submitted")],
         network: NETWORK_NAME,
       });
       loadJobs();
@@ -212,205 +189,130 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container-x py-12">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
+
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Link href="/" className="text-blue-600 hover:text-blue-800 mb-2 inline-block">
-            &larr; Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold">Agentic Commerce</h1>
-          <p className="text-gray-600">Create and manage jobs with STX escrow.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Job Escrow</h1>
+          <p className="mt-1.5 text-mist-300">Create and settle agent jobs with trustless STX escrow.</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          disabled={!!activeAction}
-        >
-          {showForm ? "Cancel" : "Create Job"}
+        <button onClick={() => setShowForm(!showForm)} className={showForm ? "btn-ghost" : "btn-primary"} disabled={!!activeAction}>
+          {showForm ? "Cancel" : <><Plus className="h-4 w-4" /> Create Job</>}
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-          <button onClick={loadJobs} className="ml-4 underline">Retry</button>
+        <div className="mt-6 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <span>{error}</span>
+          <button onClick={loadJobs} className="font-medium underline underline-offset-2">Retry</button>
         </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleCreateJob} className="bg-gray-50 p-6 rounded-lg mb-6">
-          <h2 className="text-xl font-semibold mb-4">Create New Job</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleCreateJob} className="card mt-6 p-6">
+          <h2 className="text-lg font-semibold">Create New Job</h2>
+          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                rows={3}
-                required
-              />
+              <label className="label">Description</label>
+              <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="field" rows={3} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Evaluator</label>
-              <input
-                type="text"
-                value={formData.evaluator}
-                onChange={(e) => setFormData({ ...formData, evaluator: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                placeholder="ST..."
-                required
-              />
+              <label className="label">Evaluator</label>
+              <input type="text" value={formData.evaluator} onChange={(e) => setFormData({ ...formData, evaluator: e.target.value })} className="field font-mono" placeholder="ST…" required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Provider (optional)</label>
-              <input
-                type="text"
-                value={formData.provider}
-                onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                placeholder="ST..."
-              />
+              <label className="label">Provider (optional)</label>
+              <input type="text" value={formData.provider} onChange={(e) => setFormData({ ...formData, provider: e.target.value })} className="field font-mono" placeholder="ST…" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Duration (blocks)</label>
-              <input
-                type="number"
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                className="w-full border rounded px-3 py-2"
-                required
-              />
+              <label className="label">Duration (blocks)</label>
+              <input type="number" value={formData.duration} onChange={(e) => setFormData({ ...formData, duration: e.target.value })} className="field" required />
             </div>
           </div>
-          <button
-            type="submit"
-            className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-            disabled={activeAction === "creating"}
-          >
-            {activeAction === "creating" ? "Creating..." : "Create Job"}
+          <button type="submit" className="btn-primary mt-5" disabled={activeAction === "creating"}>
+            {activeAction === "creating" ? "Creating…" : "Create Job"}
           </button>
         </form>
       )}
 
       {loading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading jobs...</p>
+        <div className="py-16 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-brand-400" />
+          <p className="mt-3 text-sm text-mist-500">Loading jobs from chain…</p>
         </div>
       ) : jobs.length === 0 ? (
-        <p className="text-gray-500">No jobs created yet. Create the first one!</p>
+        <div className="card mt-6 p-12 text-center">
+          <Briefcase className="mx-auto h-8 w-8 text-mist-500" strokeWidth={1.5} />
+          <p className="mt-3 text-mist-300">No jobs created yet. Create the first one.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="mt-6 space-y-4">
           {jobs.map((job) => (
-            <div key={job.id} className="border rounded-lg p-4 hover:shadow-md">
-              <div className="flex justify-between items-start mb-3">
+            <div key={job.id} className="card card-hover p-5">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Job #{job.id}</h3>
-                  <p className="text-gray-600 text-sm">{job.description}</p>
+                  <h3 className="text-base font-semibold text-white">Job #{job.id}</h3>
+                  <p className="mt-0.5 text-sm text-mist-300">{job.description}</p>
                 </div>
-                <span className={`px-2 py-1 rounded text-xs ${STATUS_COLORS[job.status] || 'bg-gray-100'}`}>
-                  {STATUS_LABELS[job.status] || "Unknown"}
-                </span>
+                <StatusBadge status={job.status} />
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+              <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
                 <div>
-                  <p className="text-gray-500">Client</p>
-                  <p className="font-mono truncate">{job.client}</p>
+                  <dt className="text-xs text-mist-500">Client</dt>
+                  <dd className="truncate font-mono text-xs text-mist-300">{job.client}</dd>
                 </div>
                 <div>
-                  <p className="text-gray-500">Provider</p>
-                  <p className="font-mono truncate">{job.provider || "Not assigned"}</p>
+                  <dt className="text-xs text-mist-500">Provider</dt>
+                  <dd className="truncate font-mono text-xs text-mist-300">{job.provider || "Not assigned"}</dd>
                 </div>
                 <div>
-                  <p className="text-gray-500">Evaluator</p>
-                  <p className="font-mono truncate">{job.evaluator}</p>
+                  <dt className="text-xs text-mist-500">Evaluator</dt>
+                  <dd className="truncate font-mono text-xs text-mist-300">{job.evaluator}</dd>
                 </div>
                 <div>
-                  <p className="text-gray-500">Budget</p>
-                  <p>{job.budget} STX</p>
+                  <dt className="text-xs text-mist-500">Budget</dt>
+                  <dd className="text-white">{job.budget} <span className="text-mist-500">µSTX</span></dd>
                 </div>
-              </div>
+              </dl>
 
               {job.escrow !== undefined && job.escrow > 0 && (
-                <div className="mb-3 text-sm">
-                  <span className="text-gray-500">Escrow: </span>
-                  <span className="font-semibold">{job.escrow} STX</span>
+                <div className="mt-3 inline-flex items-center gap-2 rounded-md border border-bitcoin/25 bg-bitcoin/10 px-2.5 py-1 text-xs text-bitcoin-400">
+                  Escrow locked: <span className="font-mono">{job.escrow} µSTX</span>
                 </div>
               )}
 
-              {/* Action Forms */}
               {actionForm?.jobId === job.id && (
-                <div className="bg-gray-50 p-3 rounded mb-3">
+                <div className="mt-4 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
                   {activeAction?.startsWith("setting-budget") && (
                     <div className="flex gap-2">
-                      <input
-                        type="number"
-                        placeholder="Budget in STX"
-                        value={actionForm.budget || ""}
-                        onChange={(e) => setActionForm({ ...actionForm, budget: e.target.value })}
-                        className="border rounded px-2 py-1 flex-1"
-                      />
-                      <button
-                        onClick={() => handleSetBudget(job.id)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Set Budget
-                      </button>
-                      <button
-                        onClick={() => setActionForm(null)}
-                        className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Cancel
-                      </button>
+                      <input type="number" placeholder="Budget in µSTX" value={actionForm.budget || ""} onChange={(e) => setActionForm({ ...actionForm, budget: e.target.value })} className="field flex-1" />
+                      <button onClick={() => handleSetBudget(job.id)} className="btn-primary">Set</button>
+                      <button onClick={() => setActionForm(null)} className="btn-ghost">Cancel</button>
                     </div>
                   )}
                   {activeAction?.startsWith("assigning-provider") && (
                     <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Provider address (ST...)"
-                        value={actionForm.provider || ""}
-                        onChange={(e) => setActionForm({ ...actionForm, provider: e.target.value })}
-                        className="border rounded px-2 py-1 flex-1"
-                      />
-                      <button
-                        onClick={() => handleAssignProvider(job.id)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Assign
-                      </button>
-                      <button
-                        onClick={() => setActionForm(null)}
-                        className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
-                      >
-                        Cancel
-                      </button>
+                      <input type="text" placeholder="Provider address (ST…)" value={actionForm.provider || ""} onChange={(e) => setActionForm({ ...actionForm, provider: e.target.value })} className="field flex-1 font-mono" />
+                      <button onClick={() => handleAssignProvider(job.id)} className="btn-primary">Assign</button>
+                      <button onClick={() => setActionForm(null)} className="btn-ghost">Cancel</button>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="flex gap-2 flex-wrap">
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
                 {job.status === 0 && (
                   <>
-                    <button
-                      onClick={() => {
-                        setActionForm({ jobId: job.id, budget: "" });
-                        setActiveAction(`setting-budget-${job.id}`);
-                      }}
-                      className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
-                    >
+                    <button onClick={() => { setActionForm({ jobId: job.id, budget: "" }); setActiveAction(`setting-budget-${job.id}`); }} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">
                       Set Budget
                     </button>
                     {job.budget > 0 && (
-                      <button
-                        onClick={() => handleFundJob(job.id)}
-                        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 disabled:opacity-50"
-                        disabled={activeAction === `funding-${job.id}`}
-                      >
-                        {activeAction === `funding-${job.id}` ? "Funding..." : "Fund Job"}
+                      <button onClick={() => handleFundJob(job.id)} className="btn-sm border border-bitcoin/30 text-bitcoin-400 hover:bg-bitcoin/10" disabled={activeAction === `funding-${job.id}`}>
+                        {activeAction === `funding-${job.id}` ? "Funding…" : "Fund Job"}
                       </button>
                     )}
                   </>
@@ -418,40 +320,22 @@ export default function JobsPage() {
                 {job.status === 1 && (
                   <>
                     {!job.provider && (
-                      <button
-                        onClick={() => {
-                          setActionForm({ jobId: job.id, provider: "" });
-                          setActiveAction(`assigning-provider-${job.id}`);
-                        }}
-                        className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
-                      >
+                      <button onClick={() => { setActionForm({ jobId: job.id, provider: "" }); setActiveAction(`assigning-provider-${job.id}`); }} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white">
                         Assign Provider
                       </button>
                     )}
-                    <button
-                      onClick={() => handleSubmitWork(job.id)}
-                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                      disabled={activeAction === `submitting-${job.id}`}
-                    >
-                      {activeAction === `submitting-${job.id}` ? "Submitting..." : "Submit Work"}
+                    <button onClick={() => handleSubmitWork(job.id)} className="btn-sm bg-brand text-white hover:bg-brand-600" disabled={activeAction === `submitting-${job.id}`}>
+                      {activeAction === `submitting-${job.id}` ? "Submitting…" : "Submit Work"}
                     </button>
                   </>
                 )}
                 {job.status === 2 && (
                   <>
-                    <button
-                      onClick={() => handleCompleteJob(job.id)}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50"
-                      disabled={activeAction === `completing-${job.id}`}
-                    >
-                      {activeAction === `completing-${job.id}` ? "Completing..." : "Complete"}
+                    <button onClick={() => handleCompleteJob(job.id)} className="btn-sm border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10" disabled={activeAction === `completing-${job.id}`}>
+                      {activeAction === `completing-${job.id}` ? "Completing…" : "Complete"}
                     </button>
-                    <button
-                      onClick={() => handleRejectJob(job.id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50"
-                      disabled={activeAction === `rejecting-${job.id}`}
-                    >
-                      {activeAction === `rejecting-${job.id}` ? "Rejecting..." : "Reject"}
+                    <button onClick={() => handleRejectJob(job.id)} className="btn-sm border border-red-500/25 text-red-300 hover:bg-red-500/10" disabled={activeAction === `rejecting-${job.id}`}>
+                      {activeAction === `rejecting-${job.id}` ? "Rejecting…" : "Reject"}
                     </button>
                   </>
                 )}

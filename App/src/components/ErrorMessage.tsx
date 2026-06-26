@@ -1,18 +1,15 @@
-export default function ErrorMessage({ 
-  message, 
-  onRetry 
-}: { 
-  message: string; 
+export default function ErrorMessage({
+  message,
+  onRetry,
+}: {
+  message: string;
   onRetry?: () => void;
 }) {
   return (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex justify-between items-center">
+    <div className="flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
       <span>{message}</span>
       {onRetry && (
-        <button 
-          onClick={onRetry} 
-          className="underline hover:text-red-900"
-        >
+        <button onClick={onRetry} className="font-medium underline underline-offset-2 hover:text-red-200">
           Retry
         </button>
       )}

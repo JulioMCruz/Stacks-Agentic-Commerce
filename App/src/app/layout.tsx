@@ -1,26 +1,27 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "../components/Header";
-
-const inter = Inter({ subsets: ["latin"] });
+import Logo from "../components/Logo";
 
 export const metadata = {
-  title: "PerkOS Stacks Agentic Commerce",
-  description: "Agent infrastructure on Stacks: Agent identity registry + job escrow with x402 payments",
+  title: "PerkOS — Agentic Commerce on Bitcoin",
+  description:
+    "On-chain agent identity, job escrow, reputation and validation — built on Stacks, settled on Bitcoin.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="min-h-screen antialiased">
         <Header />
-        <main className="container mx-auto px-4 py-8">{children}</main>
-        <footer className="bg-gray-900 text-white py-4 text-center">
-          <p>PerkOS Stacks Agentic Commerce &copy; 2026</p>
+        <main>{children}</main>
+        <footer className="mt-28 border-t border-white/[0.08]">
+          <div className="container-x flex flex-col items-center justify-between gap-4 py-8 text-sm text-mist-500 sm:flex-row">
+            <div className="flex items-center gap-2.5">
+              <Logo className="h-5 w-5" />
+              <span className="font-medium text-mist-300">PerkOS Agentic Commerce</span>
+            </div>
+            <span>Built on Stacks · Settled on Bitcoin · © 2026</span>
+          </div>
         </footer>
       </body>
     </html>

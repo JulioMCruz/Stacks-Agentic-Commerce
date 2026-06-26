@@ -1,21 +1,76 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0B0D14;
+  --surface: #0F121B;
+  --surface-2: #141823;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
+  body {
+    background-color: var(--bg);
+    color: #E8E9F2;
+    font-family: 'Satoshi', ui-sans-serif, system-ui, sans-serif;
+    background-image:
+      radial-gradient(58rem 40rem at 12% -12%, rgba(85, 70, 255, 0.16), transparent 60%),
+      radial-gradient(48rem 38rem at 102% -6%, rgba(247, 147, 26, 0.07), transparent 55%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+  h1, h2, h3, h4 { letter-spacing: -0.022em; font-weight: 700; }
+  ::selection { background: rgba(85, 70, 255, 0.35); color: #fff; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-[1180px] px-6; }
+
+  .kicker {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03]
+           px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-mist-300;
+  }
+
+  .card {
+    @apply rounded-2xl border border-white/[0.08] bg-[var(--surface)] shadow-card;
+  }
+  .card-hover {
+    @apply transition-all duration-200 hover:border-white/[0.16] hover:-translate-y-0.5;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5
+           text-sm font-medium text-white transition-all hover:bg-brand-600
+           shadow-[0_10px_28px_-12px_rgba(85,70,255,0.8)] disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-white/[0.12]
+           bg-white/[0.02] px-4 py-2.5 text-sm font-medium text-mist-300 transition-all
+           hover:border-white/30 hover:text-white disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5
+           text-xs font-medium transition-all disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-white/[0.1] bg-white/[0.03] px-3.5 py-2.5
+           text-sm text-white placeholder:text-mist-500 outline-none transition
+           focus:border-brand-400 focus:ring-2 focus:ring-brand/25;
+  }
+  .label { @apply mb-1.5 block text-xs font-medium text-mist-300; }
+
+  .grid-overlay {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 46px 46px;
+  }
 }

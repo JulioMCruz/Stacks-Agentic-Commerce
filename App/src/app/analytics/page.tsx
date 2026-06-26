@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ArrowLeft, RefreshCw, Fingerprint, Briefcase, Activity, CheckCircle2 } from "lucide-react";
 import { getAgentCount } from "../../services/agent-registry";
-import { getJobCount, getEscrowBalance } from "../../services/agentic-commerce";
+import { getJobCount } from "../../services/agentic-commerce";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorMessage from "../../components/ErrorMessage";
 
@@ -16,7 +17,6 @@ interface AnalyticsData {
   averageBudget: number;
   completionRate: number;
 }
-
 interface TimeSeriesData {
   labels: string[];
   jobs: number[];
@@ -36,15 +36,9 @@ export default function AnalyticsPage() {
   async function loadAnalytics() {
     setLoading(true);
     setError(null);
-
     try {
-      const [agentCount, jobCount] = await Promise.all([
-        getAgentCount(),
-        getJobCount(),
-      ]);
-
-      // Calculate analytics
-      const mockAnalytics: AnalyticsData = {
+      const [agentCount, jobCount] = await Promise.all([getAgentCount(), getJobCount()]);
+      setAnalytics({
         totalAgents: agentCount,
         totalJobs: jobCount,
         activeJobs: Math.floor(jobCount * 0.3),
@@ -52,67 +46,58 @@ export default function AnalyticsPage() {
         totalEscrow: 0,
         averageBudget: 1000,
         completionRate: jobCount > 0 ? 50 : 0,
-      };
-
-      setAnalytics(mockAnalytics);
-
-      // Generate mock time series data
-      const mockTimeSeries: TimeSeriesData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      });
+      setTimeSeries({
+        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
         jobs: [2, 5, 8, 12, 15, jobCount],
         agents: [1, 2, 3, 5, 7, agentCount],
-      };
-
-      setTimeSeries(mockTimeSeries);
+      });
     } catch (err) {
       console.error("Analytics error:", err);
       setError("Failed to load analytics data");
     }
-
     setLoading(false);
   }
 
-  if (loading) return <LoadingSpinner text="Loading analytics..." />;
+  if (loading) return <LoadingSpinner text="Loading analytics…" />;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container-x py-12">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
+
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Link href="/" className="text-blue-600 hover:text-blue-800 mb-2 inline-block">
-            &larr; Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-          <p className="text-gray-600">Protocol metrics and insights</p>
+          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+          <p className="mt-1.5 text-mist-300">Protocol metrics and growth.</p>
         </div>
-        <button
-          onClick={loadAnalytics}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Refresh
+        <button onClick={loadAnalytics} className="btn-ghost">
+          <RefreshCw className="h-4 w-4" /> Refresh
         </button>
       </div>
 
-      {error && <ErrorMessage message={error} onRetry={loadAnalytics} />}
+      {error && <div className="mt-6"><ErrorMessage message={error} onRetry={loadAnalytics} /></div>}
 
       {analytics && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <KPICard title="Total Agents" value={analytics.totalAgents} icon="Agents" trend="+12%" color="blue" />
-            <KPICard title="Total Jobs" value={analytics.totalJobs} icon="Jobs" trend="+8%" color="green" />
-            <KPICard title="Active Jobs" value={analytics.activeJobs} icon="Active" trend="+5%" color="yellow" />
-            <KPICard title="Completed" value={analytics.completedJobs} icon="Done" trend="+15%" color="purple" />
+          <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <KPICard icon={Fingerprint} title="Total Agents" value={analytics.totalAgents} trend="+12%" />
+            <KPICard icon={Briefcase} title="Total Jobs" value={analytics.totalJobs} trend="+8%" />
+            <KPICard icon={Activity} title="Active Jobs" value={analytics.activeJobs} trend="+5%" />
+            <KPICard icon={CheckCircle2} title="Completed" value={analytics.completedJobs} trend="+15%" />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <StatCard title="Total Escrow" value={`${analytics.totalEscrow} STX`} description="Locked in contracts" />
-            <StatCard title="Avg Budget" value={`${analytics.averageBudget} STX`} description="Per job" />
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <StatCard title="Total Escrow" value={`${analytics.totalEscrow} µSTX`} description="Locked in contracts" />
+            <StatCard title="Avg Budget" value={`${analytics.averageBudget} µSTX`} description="Per job" />
             <StatCard title="Completion Rate" value={`${analytics.completionRate}%`} description="Jobs completed" />
           </div>
 
           {timeSeries && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <ChartCard title="Job Growth" labels={timeSeries.labels} data={timeSeries.jobs} color="blue" />
-              <ChartCard title="Agent Growth" labels={timeSeries.labels} data={timeSeries.agents} color="green" />
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <ChartCard title="Job Growth" labels={timeSeries.labels} data={timeSeries.jobs} />
+              <ChartCard title="Agent Growth" labels={timeSeries.labels} data={timeSeries.agents} />
             </div>
           )}
         </>
@@ -121,47 +106,44 @@ export default function AnalyticsPage() {
   );
 }
 
-function KPICard({ title, value, trend, color }: { title: string; value: number; icon: string; trend: string; color: string }) {
-  const colors: Record<string, string> = {
-    blue: 'bg-blue-50 border-blue-200',
-    green: 'bg-green-50 border-green-200',
-    yellow: 'bg-yellow-50 border-yellow-200',
-    purple: 'bg-purple-50 border-purple-200',
-  };
-
+function KPICard({ icon: Icon, title, value, trend }: { icon: any; title: string; value: number; trend: string }) {
   return (
-    <div className={`${colors[color]} border rounded-lg p-6`}>
-      <div className="flex justify-between items-start mb-2">
-        <span className="text-green-600 text-sm font-semibold">{trend}</span>
+    <div className="card p-5">
+      <div className="flex items-center justify-between">
+        <Icon className="h-4 w-4 text-mist-500" strokeWidth={1.75} />
+        <span className="text-xs font-medium text-emerald-400">{trend}</span>
       </div>
-      <p className="text-3xl font-bold">{value}</p>
-      <p className="text-gray-600">{title}</p>
+      <p className="mt-3 font-mono text-3xl font-semibold tracking-tight text-white">{value}</p>
+      <p className="mt-0.5 text-sm text-mist-500">{title}</p>
     </div>
   );
 }
 
 function StatCard({ title, value, description }: { title: string; value: string; description: string }) {
   return (
-    <div className="bg-white border rounded-lg p-6">
-      <p className="font-semibold">{title}</p>
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-gray-500 text-sm">{description}</p>
+    <div className="card p-6">
+      <p className="text-sm text-mist-500">{title}</p>
+      <p className="mt-1 font-mono text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-1 text-sm text-mist-500">{description}</p>
     </div>
   );
 }
 
-function ChartCard({ title, labels, data, color }: { title: string; labels: string[]; data: number[]; color: string }) {
+function ChartCard({ title, labels, data }: { title: string; labels: string[]; data: number[] }) {
   const max = Math.max(...data, 1);
-  const barColor = color === 'blue' ? 'bg-blue-500' : 'bg-green-500';
-
   return (
-    <div className="bg-white border rounded-lg p-6">
-      <h3 className="text-lg font-semibold mb-4">{title}</h3>
-      <div className="flex items-end gap-2 h-48">
+    <div className="card p-6">
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-mist-500">{title}</h3>
+      <div className="mt-5 flex h-48 gap-2.5">
         {data.map((value, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1">
-            <div className={`${barColor} rounded-t w-full transition-all duration-500`} style={{ height: `${(value / max) * 100}%` }} />
-            <span className="text-xs text-gray-500">{labels[i]}</span>
+          <div key={i} className="flex h-full flex-1 flex-col items-center gap-2">
+            <div className="flex w-full flex-1 items-end">
+              <div
+                className="w-full rounded-t bg-gradient-to-t from-brand-600 to-brand-400 transition-all duration-500"
+                style={{ height: `${Math.max((value / max) * 100, 3)}%` }}
+              />
+            </div>
+            <span className="text-xs text-mist-500">{labels[i]}</span>
           </div>
         ))}
       </div>

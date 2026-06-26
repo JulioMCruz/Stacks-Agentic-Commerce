@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
-import { getJob, getJobCount, Job } from "../../services/agentic-commerce";
+import { ArrowLeft, RefreshCw, Fingerprint, Briefcase, Coins, CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { getAgent, getAgentCount } from "../../services/agent-registry";
+import { getJob, getJobCount } from "../../services/agentic-commerce";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 interface ActivityItem {
   id: string;
-  type: 'agent_registered' | 'job_created' | 'job_funded' | 'job_completed' | 'job_rejected';
+  type: "agent_registered" | "job_created" | "job_funded" | "job_completed" | "job_rejected";
   title: string;
   description: string;
   timestamp: number;
@@ -16,10 +17,18 @@ interface ActivityItem {
   link: string;
 }
 
+const TYPE: Record<string, { icon: any; cls: string }> = {
+  agent_registered: { icon: Fingerprint, cls: "border-brand/30 text-brand-300" },
+  job_created: { icon: Briefcase, cls: "border-white/10 text-mist-300" },
+  job_funded: { icon: Coins, cls: "border-bitcoin/30 text-bitcoin-400" },
+  job_completed: { icon: CheckCircle2, cls: "border-emerald-500/30 text-emerald-300" },
+  job_rejected: { icon: XCircle, cls: "border-red-500/30 text-red-300" },
+};
+
 export default function ActivityFeedPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('all');
+  const [filter, setFilter] = useState<string>("all");
 
   useEffect(() => {
     loadActivities();
@@ -28,50 +37,39 @@ export default function ActivityFeedPage() {
   async function loadActivities() {
     setLoading(true);
     try {
-      const [agentCount, jobCount] = await Promise.all([
-        getAgentCount(),
-        getJobCount(),
-      ]);
-
+      const [agentCount, jobCount] = await Promise.all([getAgentCount(), getJobCount()]);
       const items: ActivityItem[] = [];
 
-      // Load agents
       for (let i = 1; i <= agentCount; i++) {
         const agent = await getAgent(i);
         if (agent) {
           items.push({
             id: `agent-${i}`,
-            type: 'agent_registered',
-            title: 'Agent Registered',
+            type: "agent_registered",
+            title: "Agent Registered",
             description: `${agent.name} was registered`,
             timestamp: Date.now() - i * 86400000,
             principal: agent.creator,
-            link: `/agents`,
+            link: "/agents",
           });
         }
       }
 
-      // Load jobs
       for (let i = 1; i <= jobCount; i++) {
         const job = await getJob(i);
         if (job) {
           items.push({
             id: `job-${i}`,
-            type: job.status === 3 ? 'job_completed' : 
-                  job.status === 1 ? 'job_funded' : 
-                  job.status === 4 ? 'job_rejected' : 'job_created',
-            title: job.status === 3 ? 'Job Completed' :
-                   job.status === 1 ? 'Job Funded' :
-                   job.status === 4 ? 'Job Rejected' : 'Job Created',
-            description: `Job #${i}: ${job.description.substring(0, 60)}...`,
+            type: job.status === 3 ? "job_completed" : job.status === 1 ? "job_funded" : job.status === 4 ? "job_rejected" : "job_created",
+            title: job.status === 3 ? "Job Completed" : job.status === 1 ? "Job Funded" : job.status === 4 ? "Job Rejected" : "Job Created",
+            description: `Job #${i}: ${job.description.substring(0, 60)}…`,
             timestamp: Date.now() - i * 43200000,
             principal: job.client,
-            link: `/jobs`,
+            link: "/jobs",
           });
         }
       }
 
-      // Sort by timestamp (newest first)
       items.sort((a, b) => b.timestamp - a.timestamp);
       setActivities(items);
     } catch (error) {
@@ -80,63 +78,39 @@ export default function ActivityFeedPage() {
     setLoading(false);
   }
 
-  const filteredActivities = filter === 'all' 
-    ? activities 
-    : activities.filter(a => a.type === filter);
-
+  const filtered = filter === "all" ? activities : activities.filter((a) => a.type === filter);
   const typeLabels: Record<string, string> = {
-    all: 'All Activity',
-    agent_registered: 'Agents',
-    job_created: 'Jobs Created',
-    job_funded: 'Jobs Funded',
-    job_completed: 'Jobs Completed',
-    job_rejected: 'Jobs Rejected',
-  };
-
-  const typeIcons: Record<string, string> = {
-    agent_registered: '🤖',
-    job_created: '📋',
-    job_funded: '💰',
-    job_completed: '✅',
-    job_rejected: '❌',
-  };
-
-  const typeColors: Record<string, string> = {
-    agent_registered: 'bg-blue-100 text-blue-800',
-    job_created: 'bg-gray-100 text-gray-800',
-    job_funded: 'bg-yellow-100 text-yellow-800',
-    job_completed: 'bg-green-100 text-green-800',
-    job_rejected: 'bg-red-100 text-red-800',
+    all: "All",
+    agent_registered: "Agents",
+    job_created: "Created",
+    job_funded: "Funded",
+    job_completed: "Completed",
+    job_rejected: "Rejected",
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container-x py-12">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-mist-500 transition hover:text-white">
+        <ArrowLeft className="h-4 w-4" /> Back to Home
+      </Link>
+
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Link href="/" className="text-blue-600 hover:text-blue-800 mb-2 inline-block">
-            &larr; Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold">Activity Feed</h1>
-          <p className="text-gray-600">Latest protocol activity</p>
+          <h1 className="text-3xl font-bold tracking-tight">Activity</h1>
+          <p className="mt-1.5 text-mist-300">Latest protocol activity, on-chain.</p>
         </div>
-        <button
-          onClick={loadActivities}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Refresh
+        <button onClick={loadActivities} className="btn-ghost">
+          <RefreshCw className="h-4 w-4" /> Refresh
         </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="mt-6 flex flex-wrap gap-2">
         {Object.entries(typeLabels).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-              filter === key
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
+              filter === key ? "bg-white/[0.08] text-white" : "border border-white/[0.08] text-mist-300 hover:text-white"
             }`}
           >
             {label}
@@ -145,39 +119,31 @@ export default function ActivityFeedPage() {
       </div>
 
       {loading ? (
-        <LoadingSpinner text="Loading activity..." />
-      ) : filteredActivities.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">No activity found</p>
+        <LoadingSpinner text="Loading activity…" />
+      ) : filtered.length === 0 ? (
+        <p className="py-16 text-center text-sm text-mist-500">No activity found.</p>
       ) : (
-        <div className="space-y-3">
-          {filteredActivities.map((activity) => (
-            <Link
-              key={activity.id}
-              href={activity.link}
-              className="block bg-white border rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{typeIcons[activity.type]}</span>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs px-2 py-1 rounded ${typeColors[activity.type]}`}>
-                        {activity.title}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(activity.timestamp).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-800">{activity.description}</p>
-                    <p className="text-xs text-gray-500 mt-1 font-mono">
-                      {activity.principal}
-                    </p>
-                  </div>
+        <div className="mt-6 space-y-3">
+          {filtered.map((activity) => {
+            const t = TYPE[activity.type];
+            const Icon = t.icon;
+            return (
+              <Link key={activity.id} href={activity.link} className="card card-hover group flex items-center gap-4 p-4">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-white/[0.02] ${t.cls}`}>
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </div>
-                <span className="text-blue-600 text-sm">View →</span>
-              </div>
-            </Link>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">{activity.title}</span>
+                    <span className="text-xs text-mist-500">{new Date(activity.timestamp).toLocaleDateString()}</span>
+                  </div>
+                  <p className="truncate text-sm text-mist-300">{activity.description}</p>
+                  <p className="truncate font-mono text-xs text-mist-500">{activity.principal}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-mist-500 transition group-hover:translate-x-0.5 group-hover:text-white" />
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
