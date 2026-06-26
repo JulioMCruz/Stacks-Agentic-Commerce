@@ -6,6 +6,10 @@ export const metadata = {
   title: "PerkOS — Agentic Commerce on Bitcoin",
   description:
     "On-chain agent identity, job escrow, reputation and validation — built on Stacks, settled on Bitcoin.",
+  other: {
+    "talentapp:project_verification":
+      "1a285110d8754ae950cf96a157356f89a3f28a8b6698d320fcef87d8e951815ce61246289b8010efaa4cab5d1bde96062c1c9e425df5b828e57deef9f881b328",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
