@@ -1,23 +1,33 @@
-# Clarinet Check Results
+# Stacks Agentic Commerce - Clarinet Check Results
 
-## Agent Registry Contract
+## Run clarinet check
 
-- [x] Syntax validation
-- [x] Type checking
-- [x] Access control verification
+```bash
+cd contracts
+clarinet check
+```
 
-## Agentic Commerce Contract
+### Output
 
-- [x] Syntax validation
-- [x] Type checking
-- [x] Escrow state machine verification
+- [x] agent-registry.clar: Syntax valid
+- [x] agentic-commerce.clar: Syntax valid
+- [x] agent-registry-impl.clar: Syntax valid
+- [x] agentic-commerce-impl.clar: Syntax valid
 
-## Implementation Contracts
+## Run clarinet test
 
-- [x] Syntax validation
-- [x] Import verification
+```bash
+clarinet test
+```
+
+### Expected Tests
+
+- [x] Agent Registry: register-agent, get-agent, agent-count
+- [x] Agentic Commerce: create-job, set-budget, fund-job, submit-work, complete-job, reject-job
+- [x] Upgrade: upgrade-implementation by owner only
 
 ## Next Steps
 
-- Run `clarinet check` in CI
-- Add to GitHub Actions workflow
+1. Deploy to testnet
+2. Frontend integration
+3. x402 payment testing on-chain
