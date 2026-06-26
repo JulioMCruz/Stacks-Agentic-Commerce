@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
 import { openContractCall } from "@stacks/connect-react";
-import { uintCV, stringAsciiCV, principalCV, optionalCV, noneCV, someCV, bufferCVFromString, stxToUstx } from "@stacks/transactions";
+import { uintCV, stringAsciiCV, principalCV, optionalCV, noneCV, someCV, bufferCVFromString } from "@stacks/transactions";
 import { CONTRACT_ADDRESS, AGENTIC_COMMERCE_CONTRACT } from "../../constants/contract";
 import { NETWORK } from "../../constants/network";
 
@@ -29,7 +29,9 @@ const STATUS_COLORS: Record<number, string> = {
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [activeAction, setActiveAction] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     description: "",
     evaluator: "",
@@ -37,6 +39,11 @@ export default function JobsPage() {
     budget: "",
     duration: "100",
   });
+  const [actionForm, setActionForm] = useState<{
+    jobId: number;
+    budget?: string;
+    provider?: string;
+  } | null>(null);
 
   useEffect(() => {
     loadJobs();
@@ -44,6 +51,7 @@ export default function JobsPage() {
 
   async function loadJobs() {
     setLoading(true);
+    setError(null);
     try {
       const count = await getJobCount();
       const jobList: Job[] = [];
@@ -57,12 +65,14 @@ export default function JobsPage() {
       setJobs(jobList);
     } catch (error) {
       console.error("Error loading jobs:", error);
+      setError("Failed to load jobs. Please try again.");
     }
     setLoading(false);
   }
 
   async function handleCreateJob(e: React.FormEvent) {
     e.preventDefault();
+    setActiveAction("creating");
     
     try {
       const currentBlock = 1000; // TODO: Get actual block height from network
@@ -86,18 +96,86 @@ export default function JobsPage() {
         onFinish: (data) => {
           console.log("Job created:", data);
           setShowForm(false);
+          setActiveAction(null);
           loadJobs();
         },
         onCancel: () => {
           console.log("Transaction cancelled");
+          setActiveAction(null);
         },
       });
     } catch (error) {
       console.error("Error creating job:", error);
+      setActiveAction(null);
     }
   }
 
-  async function handleFundJob(jobId: number, amount: number) {
+  async function handleSetBudget(jobId: number) {
+    if (!actionForm?.budget) return;
+    setActiveAction(`setting-budget-${jobId}`);
+    
+    try {
+      await openContractCall({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: "agentic-commerce",
+        functionName: "set-budget",
+        functionArgs: [uintCV(jobId), uintCV(parseInt(actionForm.budget))],
+        network: NETWORK,
+        appDetails: {
+          name: "Stacks Agentic Commerce",
+          icon: "https://your-icon-url.com/logo.png",
+        },
+        onFinish: (data) => {
+          console.log("Budget set:", data);
+          setActionForm(null);
+          setActiveAction(null);
+          loadJobs();
+        },
+        onCancel: () => {
+          console.log("Transaction cancelled");
+          setActiveAction(null);
+        },
+      });
+    } catch (error) {
+      console.error("Error setting budget:", error);
+      setActiveAction(null);
+    }
+  }
+
+  async function handleAssignProvider(jobId: number) {
+    if (!actionForm?.provider) return;
+    setActiveAction(`assigning-provider-${jobId}`);
+    
+    try {
+      await openContractCall({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: "agentic-commerce",
+        functionName: "assign-provider",
+        functionArgs: [uintCV(jobId), principalCV(actionForm.provider)],
+        network: NETWORK,
+        appDetails: {
+          name: "Stacks Agentic Commerce",
+          icon: "https://your-icon-url.com/logo.png",
+        },
+        onFinish: (data) => {
+          console.log("Provider assigned:", data);
+          setActionForm(null);
+          setActiveAction(null);
+          loadJobs();
+        },
+        onCancel: () => {
+          console.log("Transaction cancelled");
+          setActiveAction(null);
+        },
+      });
+    } catch (error) {
+      console.error("Error assigning provider:", error);
+      setActiveAction(null);
+    }
+  }
+
+  async function handleFundJob(jobId: number) {
+    setActiveAction(`funding-${jobId}`);
     try {
       await openContractCall({
         contractAddress: CONTRACT_ADDRESS,
@@ -111,18 +189,22 @@ export default function JobsPage() {
         },
         onFinish: (data) => {
           console.log("Job funded:", data);
+          setActiveAction(null);
           loadJobs();
         },
         onCancel: () => {
           console.log("Transaction cancelled");
+          setActiveAction(null);
         },
       });
     } catch (error) {
       console.error("Error funding job:", error);
+      setActiveAction(null);
     }
   }
 
   async function handleSubmitWork(jobId: number) {
+    setActiveAction(`submitting-${jobId}`);
     try {
       await openContractCall({
         contractAddress: CONTRACT_ADDRESS,
@@ -139,18 +221,22 @@ export default function JobsPage() {
         },
         onFinish: (data) => {
           console.log("Work submitted:", data);
+          setActiveAction(null);
           loadJobs();
         },
         onCancel: () => {
           console.log("Transaction cancelled");
+          setActiveAction(null);
         },
       });
     } catch (error) {
       console.error("Error submitting work:", error);
+      setActiveAction(null);
     }
   }
 
   async function handleCompleteJob(jobId: number) {
+    setActiveAction(`completing-${jobId}`);
     try {
       await openContractCall({
         contractAddress: CONTRACT_ADDRESS,
@@ -164,14 +250,46 @@ export default function JobsPage() {
         },
         onFinish: (data) => {
           console.log("Job completed:", data);
+          setActiveAction(null);
           loadJobs();
         },
         onCancel: () => {
           console.log("Transaction cancelled");
+          setActiveAction(null);
         },
       });
     } catch (error) {
       console.error("Error completing job:", error);
+      setActiveAction(null);
+    }
+  }
+
+  async function handleRejectJob(jobId: number) {
+    setActiveAction(`rejecting-${jobId}`);
+    try {
+      await openContractCall({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: "agentic-commerce",
+        functionName: "reject-job",
+        functionArgs: [uintCV(jobId)],
+        network: NETWORK,
+        appDetails: {
+          name: "Stacks Agentic Commerce",
+          icon: "https://your-icon-url.com/logo.png",
+        },
+        onFinish: (data) => {
+          console.log("Job rejected:", data);
+          setActiveAction(null);
+          loadJobs();
+        },
+        onCancel: () => {
+          console.log("Transaction cancelled");
+          setActiveAction(null);
+        },
+      });
+    } catch (error) {
+      console.error("Error rejecting job:", error);
+      setActiveAction(null);
     }
   }
 
@@ -188,10 +306,18 @@ export default function JobsPage() {
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          disabled={!!activeAction}
         >
           {showForm ? "Cancel" : "Create Job"}
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button onClick={loadJobs} className="ml-4 underline">Retry</button>
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={handleCreateJob} className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -241,15 +367,19 @@ export default function JobsPage() {
           </div>
           <button
             type="submit"
-            className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+            className="mt-4 bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+            disabled={activeAction === "creating"}
           >
-            Create Job
+            {activeAction === "creating" ? "Creating..." : "Create Job"}
           </button>
         </form>
       )}
 
       {loading ? (
-        <p>Loading jobs...</p>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading jobs...</p>
+        </div>
       ) : jobs.length === 0 ? (
         <p className="text-gray-500">No jobs created yet. Create the first one!</p>
       ) : (
@@ -285,30 +415,127 @@ export default function JobsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              {job.escrow !== undefined && job.escrow > 0 && (
+                <div className="mb-3 text-sm">
+                  <span className="text-gray-500">Escrow: </span>
+                  <span className="font-semibold">{job.escrow} STX</span>
+                </div>
+              )}
+
+              {/* Action Forms */}
+              {actionForm?.jobId === job.id && (
+                <div className="bg-gray-50 p-3 rounded mb-3">
+                  {activeAction?.startsWith("setting-budget") && (
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Budget in STX"
+                        value={actionForm.budget || ""}
+                        onChange={(e) => setActionForm({ ...actionForm, budget: e.target.value })}
+                        className="border rounded px-2 py-1 flex-1"
+                      />
+                      <button
+                        onClick={() => handleSetBudget(job.id)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Set Budget
+                      </button>
+                      <button
+                        onClick={() => setActionForm(null)}
+                        className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  {activeAction?.startsWith("assigning-provider") && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Provider address (ST...)"
+                        value={actionForm.provider || ""}
+                        onChange={(e) => setActionForm({ ...actionForm, provider: e.target.value })}
+                        className="border rounded px-2 py-1 flex-1"
+                      />
+                      <button
+                        onClick={() => handleAssignProvider(job.id)}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Assign
+                      </button>
+                      <button
+                        onClick={() => setActionForm(null)}
+                        className="bg-gray-400 text-white px-3 py-1 rounded text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 flex-wrap">
                 {job.status === 0 && (
-                  <button
-                    onClick={() => handleFundJob(job.id, job.budget)}
-                    className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700"
-                  >
-                    Fund Job
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setActionForm({ jobId: job.id, budget: "" });
+                        setActiveAction(`setting-budget-${job.id}`);
+                      }}
+                      className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
+                    >
+                      Set Budget
+                    </button>
+                    {job.budget > 0 && (
+                      <button
+                        onClick={() => handleFundJob(job.id)}
+                        className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 disabled:opacity-50"
+                        disabled={activeAction === `funding-${job.id}`}
+                      >
+                        {activeAction === `funding-${job.id}` ? "Funding..." : "Fund Job"}
+                      </button>
+                    )}
+                  </>
                 )}
                 {job.status === 1 && (
-                  <button
-                    onClick={() => handleSubmitWork(job.id)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                  >
-                    Submit Work
-                  </button>
+                  <>
+                    {!job.provider && (
+                      <button
+                        onClick={() => {
+                          setActionForm({ jobId: job.id, provider: "" });
+                          setActiveAction(`assigning-provider-${job.id}`);
+                        }}
+                        className="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700"
+                      >
+                        Assign Provider
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleSubmitWork(job.id)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                      disabled={activeAction === `submitting-${job.id}`}
+                    >
+                      {activeAction === `submitting-${job.id}` ? "Submitting..." : "Submit Work"}
+                    </button>
+                  </>
                 )}
                 {job.status === 2 && (
-                  <button
-                    onClick={() => handleCompleteJob(job.id)}
-                    className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                  >
-                    Complete
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleCompleteJob(job.id)}
+                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                      disabled={activeAction === `completing-${job.id}`}
+                    >
+                      {activeAction === `completing-${job.id}` ? "Completing..." : "Complete"}
+                    </button>
+                    <button
+                      onClick={() => handleRejectJob(job.id)}
+                      className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 disabled:opacity-50"
+                      disabled={activeAction === `rejecting-${job.id}`}
+                    >
+                      {activeAction === `rejecting-${job.id}` ? "Rejecting..." : "Reject"}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
