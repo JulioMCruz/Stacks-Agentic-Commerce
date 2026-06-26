@@ -1,78 +1,443 @@
 # Stacks Agentic Commerce
 
-Agent infrastructure on Stacks: Agent identity registry + job escrow with x402 payments.
+Agent infrastructure on Stacks: Decentralized identity registry + job escrow with x402-style STX payments.
 
-## Overview
+## Table of Contents
 
-This project implements decentralized agent infrastructure on Stacks:
+- [Problem Statement](#problem-statement)
+- [Solution Overview](#solution-overview)
+- [Architecture](#architecture)
+- [User Workflows](#user-workflows)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Smart Contracts](#smart-contracts)
+- [Frontend](#frontend)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
 
-- **Agent Registry**: On-chain identity for AI agents (ERC-8004 equivalent for Stacks)
-- **Agentic Commerce**: Job escrow with x402-style STX payments (ERC-8183 equivalent for Stacks)
-- **Upgradability**: Registry/implementation pattern for future enhancements
+---
 
-## Features
+## Problem Statement
 
-### Agent Registry
-- Register agents with name, description, wallet, endpoints
-- Update agent metadata (name, description, wallet)
-- Deactivate agents
-- Query agents by ID
-- Protocol caller access control
+AI agents are becoming autonomous economic actors that need:
 
-### Agentic Commerce
-- Create jobs with evaluator, provider, description, expiration
-- Set budget in STX
-- Fund jobs with STX escrow
-- Assign providers
-- Submit work deliverables
-- Complete jobs (release escrow to provider)
-- Reject jobs (refund escrow to client)
-- Expire jobs (auto-refund if funded)
+1. **Identity**: Verifiable on-chain identity to establish trust
+2. **Payments**: Machine-to-machine payment infrastructure
+3. **Coordination**: Secure escrow for agent-to-agent transactions
+4. **Reputation**: Track record of completed work
+5. **Verification**: Capability attestation and validation
+
+Existing solutions are fragmented across different chains or lack Stacks-native implementations.
+
+## Solution Overview
+
+Stacks Agentic Commerce provides a complete infrastructure layer for AI agents on Stacks:
+
+### Core Features
+
+| Feature | Description |
+|---------|-------------|
+| **Agent Registry** | On-chain identity with metadata, endpoints, and access control |
+| **Job Escrow** | STX-based escrow with milestone-based releases |
+| **x402 Payments** | Payment-native requests for machine-to-machine commerce |
+| **Reputation** | Rating system (1-5) with average scores and job tracking |
+| **Validation** | Agent verification with proof hashes and capabilities |
+| **Analytics** | Protocol metrics, growth charts, and activity feeds |
+
+### Why Stacks?
+
+- Bitcoin settlement finality
+- Clarity language with built-in safety features
+- Low transaction fees
+- Growing DeFi ecosystem
+
+---
 
 ## Architecture
 
+### System Architecture
+
+```mermaid
+graph TB
+    subgraph Frontend
+        UI[Next.js Frontend]
+        WC[Stacks Connect]
+        NOT[Notifications]
+        ANA[Analytics Dashboard]
+    end
+
+    subgraph SmartContracts
+        AR[Agent Registry]
+        AC[Agentic Commerce]
+        RR[Reputation Registry]
+        VR[Validation Registry]
+    end
+
+    subgraph Services
+        XR[x402 Middleware]
+        SR[Search Service]
+        AF[Activity Feed]
+    end
+
+    UI --> WC
+    WC --> AR
+    WC --> AC
+    WC --> RR
+    WC --> VR
+    UI --> NOT
+    UI --> ANA
+    UI --> XR
+    UI --> SR
+    UI --> AF
+    AR --> AC
+    AC --> RR
+    AR --> VR
+```
+
+### Contract Interactions
+
+```mermaid
+sequenceDiagram
+    participant Client as Client Agent
+    participant Provider as Provider Agent
+    participant Evaluator as Evaluator Agent
+    participant AR as Agent Registry
+    participant AC as Agentic Commerce
+    participant RR as Reputation Registry
+
+    Client->>AR: register-agent(name, wallet)
+    Provider->>AR: register-agent(name, wallet)
+    Evaluator->>AR: register-agent(name, wallet)
+    AR-->>Client: agent-id
+    AR-->>Provider: agent-id
+    AR-->>Evaluator: agent-id
+
+    Client->>AC: create-job(evaluator, description)
+    AC-->>Client: job-id
+
+    Client->>AC: set-budget(job-id, amount)
+    Client->>AC: fund-job(job-id)
+    Note over AC: Escrow holds STX
+
+    Provider->>AC: assign-provider(job-id)
+    Provider->>AC: submit-work(job-id, deliverable)
+
+    Evaluator->>AC: complete-job(job-id)
+    Note over AC: Release escrow to provider
+    AC->>RR: record-completion(provider)
+```
+
+---
+
+## User Workflows
+
+### 1. Agent Registration
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Wallet
+    participant AR as Agent Registry
+
+    User->>Frontend: Click "Register Agent"
+    Frontend->>User: Show registration form
+    User->>Frontend: Fill name, description, wallet, endpoints
+    Frontend->>Wallet: Request connection
+    Wallet-->>Frontend: Connected (principal)
+    Frontend->>AR: register-agent(name, description, wallet, endpoints)
+    AR-->>Frontend: agent-id (uint)
+    Frontend->>User: Show success notification
+```
+
+### 2. Job Creation and Funding
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Frontend
+    participant Wallet
+    participant AC as Agentic Commerce
+
+    Client->>Frontend: Click "Create Job"
+    Frontend->>Client: Show job form
+    Client->>Frontend: Select evaluator, set description, expiration
+    Frontend->>Wallet: Request transaction
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>AC: create-job(evaluator, expired-at, description)
+    AC-->>Frontend: job-id
+    Frontend->>Client: Job created
+
+    Client->>Frontend: Set budget
+    Frontend->>AC: set-budget(job-id, amount)
+
+    Client->>Frontend: Fund job
+    Frontend->>Wallet: Request STX transfer
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>AC: fund-job(job-id)
+    Note over AC: STX locked in escrow
+    Frontend->>Client: Job funded
+```
+
+### 3. Work Submission and Completion
+
+```mermaid
+sequenceDiagram
+    participant Provider
+    participant Evaluator
+    participant Frontend
+    participant Wallet
+    participant AC as Agentic Commerce
+    participant RR as Reputation Registry
+
+    Provider->>Frontend: Assign to job
+    Frontend->>AC: assign-provider(job-id, provider)
+
+    Provider->>Frontend: Submit work
+    Frontend->>AC: submit-work(job-id, deliverable-hash)
+
+    Evaluator->>Frontend: Review deliverable
+    Evaluator->>Frontend: Approve work
+    Frontend->>Wallet: Request transaction
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>AC: complete-job(job-id)
+    AC->>AC: Transfer escrow to provider
+    AC->>RR: record-completion(provider)
+    RR-->>Frontend: Updated reputation
+    Frontend->>Provider: Payment received
+    Frontend->>Evaluator: Job completed
+```
+
+### 4. Job Rejection and Refund
+
+```mermaid
+sequenceDiagram
+    participant Evaluator
+    participant Frontend
+    participant Wallet
+    participant AC as Agentic Commerce
+    participant Client
+
+    Evaluator->>Frontend: Review deliverable
+    Evaluator->>Frontend: Reject work
+    Frontend->>Wallet: Request transaction
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>AC: reject-job(job-id)
+    AC->>AC: Refund escrow to client
+    AC-->>Frontend: Job rejected
+    Frontend->>Client: Refund processed
+    Frontend->>Provider: Job rejected notification
+```
+
+### 5. Agent Rating (Reputation)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Frontend
+    participant Wallet
+    participant RR as Reputation Registry
+
+    Client->>Frontend: View completed job
+    Client->>Frontend: Click "Rate Agent"
+    Frontend->>Client: Show rating form (1-5 stars)
+    Client->>Frontend: Submit rating + comment
+    Frontend->>Wallet: Request transaction
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>RR: rate-agent(agent, score, job-id, comment)
+    RR-->>Frontend: Rating recorded
+    RR->>RR: Recalculate average score
+    Frontend->>Client: Rating submitted
+```
+
+### 6. Agent Verification (Validation)
+
+```mermaid
+sequenceDiagram
+    participant Verifier
+    participant Agent
+    participant Frontend
+    participant Wallet
+    participant VR as Validation Registry
+
+    Agent->>Frontend: Request verification
+    Frontend->>Agent: Show verification form
+    Agent->>Frontend: Submit proof-hash + capabilities
+    Frontend->>Wallet: Request transaction
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>VR: verify-agent(agent, proof-hash, type, capabilities)
+
+    Verifier->>Frontend: Review verification request
+    Verifier->>Frontend: Approve verification
+    Frontend->>Wallet: Request transaction
+    Wallet-->>Frontend: Transaction signed
+    Frontend->>VR: update-verification-status(agent, true)
+    VR-->>Frontend: Agent verified
+    Frontend->>Agent: Verification approved
+```
+
+---
+
+## Installation
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- Clarinet CLI (for contract development)
+- A Stacks wallet (Hiro/Leather recommended)
+- Testnet STX (from [Hiro Faucet](https://platform.hiro.so/faucet))
+
+### Clone and Install
+
+```bash
+# Clone repository
+git clone https://github.com/JulioMCruz/Stacks-Agentic-Commerce.git
+cd Stacks-Agentic-Commerce
+
+# Install frontend dependencies
+cd App && npm install
+```
+
+### Contract Setup
+
+```bash
+# Validate contracts
+cd ..
+clarinet check
+
+# Run tests
+clarinet test
+```
+
+### Wallet Configuration
+
+1. Install [Leather Wallet](https://leather.io/) (browser extension)
+2. Switch to testnet mode
+3. Get testnet STX from the [faucet](https://platform.hiro.so/faucet)
+4. Copy your testnet address for deployment
+
+---
+
+## Usage
+
+### Running the Frontend
+
+```bash
+cd App
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Connecting Your Wallet
+
+1. Click "Connect Wallet" in the top navigation
+2. Select Leather Wallet from the popup
+3. Approve the connection in your wallet
+4. Your testnet address will appear in the UI
+
+### Key User Flows
+
+#### Register an Agent
+1. Navigate to "Agents" page
+2. Click "Register New Agent"
+3. Fill in name, description, wallet, and endpoints
+4. Submit transaction and wait for confirmation
+
+#### Create a Job
+1. Navigate to "Jobs" page
+2. Click "Create Job"
+3. Select evaluator and set description
+4. Set expiration block height
+5. Submit transaction
+
+#### Fund a Job
+1. Find your job in the list
+2. Click "Set Budget" and enter STX amount
+3. Click "Fund Job" to transfer STX to escrow
+
+#### Complete Work
+1. Provider assigns themselves to the job
+2. Provider submits work deliverable
+3. Evaluator reviews and clicks "Complete"
+4. Escrow releases to provider
+
+---
+
+## Project Structure
+
 ```
 Stacks-Agentic-Commerce/
-├── App/                    # Next.js frontend
+├── App/                          # Next.js frontend
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── agents/     # Agent registry UI
-│   │   │   ├── jobs/       # Job escrow UI
-│   │   │   └── page.tsx     # Home page
+│   │   │   ├── agents/          # Agent registry UI
+│   │   │   ├── jobs/            # Job escrow UI
+│   │   │   ├── dashboard/       # Protocol stats
+│   │   │   ├── analytics/       # Analytics dashboard
+│   │   │   ├── activity/        # Activity feed
+│   │   │   ├── search/          # Search functionality
+│   │   │   └── page.tsx         # Home page
 │   │   ├── components/
 │   │   │   ├── WalletConnect.tsx
 │   │   │   ├── LoadingSpinner.tsx
 │   │   │   ├── ErrorMessage.tsx
 │   │   │   ├── StatusBadge.tsx
-│   │   │   └── TransactionButton.tsx
+│   │   │   ├── TransactionButton.tsx
+│   │   │   ├── AgentProfile.tsx
+│   │   │   ├── X402PaymentButton.tsx
+│   │   │   └── Notification.tsx
 │   │   ├── services/
 │   │   │   ├── agent-registry.ts
-│   │   │   └── agentic-commerce.ts
+│   │   │   ├── agentic-commerce.ts
+│   │   │   ├── reputation.ts
+│   │   │   ├── validation.ts
+│   │   │   └── x402.ts
+│   │   ├── middleware/
+│   │   │   └── x402.ts
 │   │   └── constants/
 │   │       ├── contract.ts
 │   │       └── network.ts
-├── contracts/              # Clarity smart contracts
+│   └── package.json
+├── contracts/                    # Clarity smart contracts
 │   ├── agent-registry.clar
-│   └── agentic-commerce.clar
+│   ├── agentic-commerce.clar
+│   ├── reputation-registry.clar
+│   └── validation-registry.clar
 ├── tests/
-│   ├── agent-registry.test.ts
-│   ├── agentic-commerce.test.ts
-│   └── contract/             # Unit tests
+│   ├── contract/
+│   │   ├── agent-registry.test.ts
+│   │   └── agentic-commerce.test.ts
+│   └── clarinet/
 │       ├── agent-registry.test.ts
 │       └── agentic-commerce.test.ts
 ├── docs/
 │   ├── DEPLOY_TESTNET.md
-│   ├── ARCHITECTURE.md
-│   └── ...
-└── settings/
-    ├── Devnet.toml
-    ├── Testnet.toml
-    └── Mainnet.toml
+│   ├── FRONTEND_INTEGRATION.md
+│   └── X402_INTEGRATION.md
+├── settings/
+│   ├── Devnet.toml
+│   ├── Testnet.toml
+│   └── Mainnet.toml
+├── deployments/
+│   └── default.testnet-plan.yaml
+├── scripts/
+│   └── deploy-testnet.sh
+├── README.md
+├── STATUS.md
+├── Clarinet.toml
+└── LICENSE
 ```
+
+---
 
 ## Smart Contracts
 
-### Agent Registry (`agent-registry.clar`)
+### Agent Registry
+
+Manages on-chain identity for AI agents.
 
 ```clarity
 ;; Register new agent
@@ -98,7 +463,9 @@ Stacks-Agentic-Commerce/
 (define-public (deactivate-agent (agent-id uint)))
 ```
 
-### Agentic Commerce (`agentic-commerce.clar`)
+### Agentic Commerce
+
+Job escrow with STX payments.
 
 ```clarity
 ;; Create job
@@ -109,14 +476,8 @@ Stacks-Agentic-Commerce/
   (description (string-ascii 512))
 ))
 
-;; Set budget
-(define-public (set-budget (job-id uint) (amount uint)))
-
 ;; Fund job (STX transfer to escrow)
 (define-public (fund-job (job-id uint)))
-
-;; Assign provider
-(define-public (assign-provider (job-id uint) (provider principal)))
 
 ;; Submit work
 (define-public (submit-work (job-id uint) (deliverable (buff 64))))
@@ -126,90 +487,57 @@ Stacks-Agentic-Commerce/
 
 ;; Reject job (refund client)
 (define-public (reject-job (job-id uint)))
-
-;; Expire job (auto-refund if funded)
-(define-public (expire-job (job-id uint)))
 ```
 
-## Job Lifecycle
+### Reputation Registry
 
-```
-Open → Funded → Submitted → Completed
-                    ↓
-                Rejected
-                    ↓
-                Expired
-```
+Agent rating and reputation tracking.
 
-| Status | Actions Allowed |
-|--------|----------------|
-| Open | set-budget, fund-job, expire-job |
-| Funded | assign-provider, submit-work, expire-job |
-| Submitted | complete-job, reject-job |
-| Completed | (final) |
-| Rejected | (final) |
-| Expired | (final) |
+```clarity
+;; Rate an agent (1-5)
+(define-public (rate-agent
+  (agent principal)
+  (score uint)
+  (job-id uint)
+  (comment (string-ascii 256))
+))
 
-## Tech Stack
-
-- **Smart Contracts**: Clarity on Stacks
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **Wallet Integration**: @stacks/connect-react, @stacks/transactions
-- **Testing**: Vitest, Clarinet
-- **Network**: Stacks Testnet (nakamoto-testnet)
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- Clarinet CLI
-- A Stacks wallet (Hiro/Leather recommended)
-
-### Installation
-
-```bash
-# Clone repo
-git clone https://github.com/JulioMCruz/Stacks-Agentic-Commerce.git
-cd Stacks-Agentic-Commerce
-
-# Install dependencies
-cd App && npm install
-
-# Run contract validation
-cd .. && clarinet check
+;; Get agent reputation
+(define-read-only (get-reputation (agent principal)))
 ```
 
-### Development
+### Validation Registry
 
-```bash
-# Run frontend locally
-cd App && npm run dev
+Agent verification and capability attestation.
 
-# Run contract tests
-clarinet test
+```clarity
+;; Verify agent
+(define-public (verify-agent
+  (agent principal)
+  (proof-hash (string-ascii 64))
+  (verification-type (string-ascii 32))
+  (capabilities (list 10 (string-ascii 32)))
+))
+
+;; Check verification status
+(define-read-only (get-verification (agent principal)))
 ```
 
-### Testnet Deployment
-
-1. Configure `settings/Testnet.toml` with your mnemonic
-2. Request testnet STX from [Hiro Faucet](https://platform.hiro.so/faucet)
-3. Deploy contracts:
-   ```bash
-   clarinet deployments apply --testnet
-   ```
-4. Update frontend contract addresses in `App/src/constants/contract.ts`
+---
 
 ## Testing
 
 ### Contract Tests
 
 ```bash
-# Run all tests
+# Run all Clarinet tests
 clarinet test
 
 # Run specific test file
-clarinet test tests/agent-registry.test.ts
+clarinet test tests/contract/agent-registry.test.ts
+
+# Validate contracts
+clarinet check
 ```
 
 ### Frontend Tests
@@ -219,45 +547,78 @@ cd App
 npm test
 ```
 
-## Contract Addresses
+### Manual Testing Checklist
 
-### Testnet
-- `agent-registry`: `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.agent-registry`
-- `agentic-commerce`: `ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.agentic-commerce`
+- [ ] Register an agent
+- [ ] Update agent metadata
+- [ ] Deactivate agent
+- [ ] Create a job
+- [ ] Set budget
+- [ ] Fund job with STX
+- [ ] Assign provider
+- [ ] Submit work
+- [ ] Complete job (escrow releases)
+- [ ] Reject job (refund to client)
+- [ ] Rate an agent
+- [ ] Verify an agent
+- [ ] Search for agents/jobs
+- [ ] View analytics dashboard
+- [ ] View activity feed
 
-*(Replace with actual deployed addresses)*
+---
 
-## Upgradability
+## Deployment
 
-The contracts use the registry/implementation pattern:
+### Testnet Deployment
 
-1. **Registry contract**: Stores state (agents, jobs) and access control
-2. **Implementation contract**: Business logic that can be upgraded
-3. **Owner**: Can call `upgrade-implementation(new-impl)` to point to new logic
+1. Configure wallet in `settings/Testnet.toml`
+2. Generate deployment plan:
+   ```bash
+   clarinet deployments generate --testnet --low-cost
+   ```
+3. Deploy contracts:
+   ```bash
+   clarinet deployments apply --testnet
+   ```
+4. Update frontend contract addresses in `App/src/constants/contract.ts`
 
-This allows fixing bugs and adding features without losing state.
+See [docs/DEPLOY_TESTNET.md](docs/DEPLOY_TESTNET.md) for detailed instructions.
 
-## Security
+### Contract Addresses (Testnet)
 
-- Owner-only upgrade function
-- Protocol caller access control
-- Status validation on state transitions
-- Principal validation (client/provider/evaluator)
-- Escrow balance tracking
-- Refund on rejection/expiration
+| Contract | Address |
+|----------|---------|
+| agent-registry | *(deploy to get address)* |
+| agentic-commerce | *(deploy to get address)* |
+| reputation-registry | *(deploy to get address)* |
+| validation-registry | *(deploy to get address)* |
+
+---
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch: `git checkout -b feature/my-feature`
 3. Make your changes
 4. Run tests: `clarinet check && clarinet test`
-5. Submit a pull request
+5. Commit with descriptive messages
+6. Push to your fork
+7. Open a pull request
 
-## Project Status
+### Commit Convention
 
-See [STATUS.md](STATUS.md) for detailed project status.
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `test:` Test additions/changes
+- `chore:` Maintenance tasks
+
+---
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Project Status
+
+See [STATUS.md](STATUS.md) for detailed project status and roadmap.
