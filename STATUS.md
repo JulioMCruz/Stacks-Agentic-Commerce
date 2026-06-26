@@ -15,8 +15,8 @@
 
 - **Smart Contracts**: Clarity (Stx) with upgradability pattern
 - **Frontend**: Next.js (App Router)
-- **Wallet**: Hiro Wallet, Leather (via @stacks/connect)
-- **Payments**: STX via x402 (HTTP 402)
+- **Wallet**: Hiro Wallet, Leather
+- **Payments**: STX via x402
 
 ## Upgradability Pattern
 
