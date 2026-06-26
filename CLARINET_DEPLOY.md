@@ -7,15 +7,11 @@ cd contracts
 clarinet check
 ```
 
-Expected output: No errors
-
 ## Run Clarinet Test
 
 ```bash
 clarinet test
 ```
-
-Expected output: All tests pass
 
 ## Deploy to Testnet
 
