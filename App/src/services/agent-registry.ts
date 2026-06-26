@@ -1,6 +1,6 @@
-import { callReadOnlyFunction, contractPrincipalCV, uintCV, stringAsciiCV, boolCV, principalCV, listCV, tupleCV, OptionalCV, SomeCV, standardPrincipalCV, responseErrorCV, responseOkCV } from "@stacks/transactions";
+import { fetchCallReadOnlyFunction, cvToValue, Cl } from "@stacks/transactions";
 import { NETWORK } from "../constants/network";
-import { CONTRACT_ADDRESS, AGENT_REGISTRY_CONTRACT } from "../constants/contract";
+import { CONTRACT_ADDRESS } from "../constants/contract";
 
 export interface Agent {
   id: number;
@@ -14,31 +14,31 @@ export interface Agent {
 
 export async function getAgent(agentId: number): Promise<Agent | null> {
   try {
-    const result = await callReadOnlyFunction({
+    const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
       contractName: "agent-registry",
       functionName: "get-agent",
-      functionArgs: [uintCV(agentId)],
+      functionArgs: [Cl.uint(agentId)],
       network: NETWORK,
       senderAddress: CONTRACT_ADDRESS,
     });
 
-    if (result.type === 'ok' && result.value?.type === 'tuple') {
-      const data = result.value.data;
-      return {
-        id: agentId,
-        name: data.name?.value || '',
-        description: data.description?.value || '',
-        creator: data.creator?.value || '',
-        wallet: data.wallet?.value || '',
-        active: data.active?.value || false,
-        endpoints: data.endpoints?.value?.map((ep: any) => ({
-          name: ep.data.name?.value || '',
-          url: ep.data.url?.value || '',
-        })) || [],
-      };
-    }
-    return null;
+    // get-agent returns (ok tuple) or (err u102)
+    if (cv.type !== "ok") return null;
+    const t: any = cvToValue(cv).value;
+
+    return {
+      id: agentId,
+      name: t.name?.value ?? "",
+      description: t.description?.value ?? "",
+      creator: t.creator?.value ?? "",
+      wallet: t.wallet?.value ?? "",
+      active: t.active?.value ?? false,
+      endpoints: (t.endpoints?.value ?? []).map((ep: any) => ({
+        name: ep.value?.name?.value ?? "",
+        url: ep.value?.url?.value ?? "",
+      })),
+    };
   } catch (error) {
     console.error("Error getting agent:", error);
     return null;
@@ -47,7 +47,7 @@ export async function getAgent(agentId: number): Promise<Agent | null> {
 
 export async function getAgentCount(): Promise<number> {
   try {
-    const result = await callReadOnlyFunction({
+    const cv = await fetchCallReadOnlyFunction({
       contractAddress: CONTRACT_ADDRESS,
       contractName: "agent-registry",
       functionName: "get-agent-count",
@@ -56,10 +56,8 @@ export async function getAgentCount(): Promise<number> {
       senderAddress: CONTRACT_ADDRESS,
     });
 
-    if (result.type === 'ok' && result.value?.type === 'uint') {
-      return Number(result.value.value);
-    }
-    return 0;
+    if (cv.type !== "ok") return 0;
+    return Number(cvToValue(cv).value);
   } catch (error) {
     console.error("Error getting agent count:", error);
     return 0;

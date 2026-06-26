@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
-import { openContractCall } from "@stacks/connect-react";
-import { uintCV, stringAsciiCV, principalCV, optionalCV, someCV, noneCV, listCV, tupleCV } from "@stacks/transactions";
+import { request } from "@stacks/connect";
+import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
-import { NETWORK } from "../../constants/network";
+import { NETWORK_NAME } from "../../constants/network";
+
+const AGENT_REGISTRY = `${CONTRACT_ADDRESS}.agent-registry` as `${string}.${string}`;
 
 export default function AgentsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -48,42 +50,30 @@ export default function AgentsPage() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setActiveAction("registering");
-    
+
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agent-registry",
+      await request("stx_callContract", {
+        contract: AGENT_REGISTRY,
         functionName: "register-agent",
         functionArgs: [
-          stringAsciiCV(formData.name),
-          stringAsciiCV(formData.description),
-          principalCV(formData.wallet),
-          listCV([
-            tupleCV({
-              name: stringAsciiCV(formData.endpointName),
-              url: stringAsciiCV(formData.endpointUrl),
+          Cl.stringAscii(formData.name),
+          Cl.stringAscii(formData.description),
+          Cl.principal(formData.wallet),
+          Cl.list([
+            Cl.tuple({
+              name: Cl.stringAscii(formData.endpointName),
+              url: Cl.stringAscii(formData.endpointUrl),
             }),
           ]),
         ],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Agent registered:", data);
-          setShowForm(false);
-          setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
-          setActiveAction(null);
-          loadAgents();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        network: NETWORK_NAME,
       });
+      setShowForm(false);
+      setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
+      loadAgents();
     } catch (error) {
       console.error("Error registering agent:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -95,65 +85,41 @@ export default function AgentsPage() {
     setActiveAction(`updating-${editingAgent.id}`);
     
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agent-registry",
+      await request("stx_callContract", {
+        contract: AGENT_REGISTRY,
         functionName: "update-agent",
         functionArgs: [
-          uintCV(editingAgent.id),
-          optionalCV(formData.name ? someCV(stringAsciiCV(formData.name)) : noneCV()),
-          optionalCV(formData.description ? someCV(stringAsciiCV(formData.description)) : noneCV()),
-          optionalCV(formData.wallet ? someCV(principalCV(formData.wallet)) : noneCV()),
+          Cl.uint(editingAgent.id),
+          formData.name ? Cl.some(Cl.stringAscii(formData.name)) : Cl.none(),
+          formData.description ? Cl.some(Cl.stringAscii(formData.description)) : Cl.none(),
+          formData.wallet ? Cl.some(Cl.principal(formData.wallet)) : Cl.none(),
         ],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Agent updated:", data);
-          setEditingAgent(null);
-          setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
-          setActiveAction(null);
-          loadAgents();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        network: NETWORK_NAME,
       });
+      setEditingAgent(null);
+      setFormData({ name: "", description: "", wallet: "", endpointName: "", endpointUrl: "" });
+      loadAgents();
     } catch (error) {
       console.error("Error updating agent:", error);
+    } finally {
       setActiveAction(null);
     }
   }
 
   async function handleDeactivate(agentId: number) {
     setActiveAction(`deactivating-${agentId}`);
-    
+
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agent-registry",
+      await request("stx_callContract", {
+        contract: AGENT_REGISTRY,
         functionName: "deactivate-agent",
-        functionArgs: [uintCV(agentId)],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Agent deactivated:", data);
-          setActiveAction(null);
-          loadAgents();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        functionArgs: [Cl.uint(agentId)],
+        network: NETWORK_NAME,
       });
+      loadAgents();
     } catch (error) {
       console.error("Error deactivating agent:", error);
+    } finally {
       setActiveAction(null);
     }
   }

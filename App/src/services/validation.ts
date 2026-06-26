@@ -1,9 +1,9 @@
-import { openContractCall } from "@stacks/connect-react";
-import { principalCV, bufferCVFromString, listCV, stringAsciiCV } from "@stacks/transactions";
+import { request } from "@stacks/connect";
+import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../constants/contract";
-import { NETWORK } from "../constants/network";
+import { NETWORK_NAME } from "../constants/network";
 
-const VALIDATION_CONTRACT = "validation-registry";
+const VALIDATION_CONTRACT = `${CONTRACT_ADDRESS}.validation-registry` as `${string}.${string}`;
 
 export interface Verification {
   isVerified: boolean;
@@ -15,7 +15,7 @@ export interface Verification {
 
 export async function getVerification(agentAddress: string): Promise<Verification | null> {
   try {
-    // This would call the contract in production
+    // TODO: wire to validation-registry get-verification read-only call
     return null;
   } catch (error) {
     console.error("Error getting verification:", error);
@@ -25,7 +25,7 @@ export async function getVerification(agentAddress: string): Promise<Verificatio
 
 export async function isVerified(agentAddress: string): Promise<boolean> {
   try {
-    // This would call the contract in production
+    // TODO: wire to validation-registry is-verified read-only call
     return false;
   } catch (error) {
     console.error("Error checking verification:", error);
@@ -38,25 +38,14 @@ export async function verifyAgent(
   proofHash: string,
   capabilities: string[]
 ): Promise<void> {
-  await openContractCall({
-    contractAddress: CONTRACT_ADDRESS,
-    contractName: VALIDATION_CONTRACT,
+  await request("stx_callContract", {
+    contract: VALIDATION_CONTRACT,
     functionName: "verify-agent",
     functionArgs: [
-      principalCV(agentAddress),
-      bufferCVFromString(proofHash),
-      listCV(capabilities.map((cap) => stringAsciiCV(cap))),
+      Cl.principal(agentAddress),
+      Cl.bufferFromAscii(proofHash),
+      Cl.list(capabilities.map((cap) => Cl.stringAscii(cap))),
     ],
-    network: NETWORK,
-    appDetails: {
-      name: "PerkOS Stacks Agentic Commerce",
-      icon: "https://your-icon-url.com/logo.png",
-    },
-    onFinish: (data) => {
-      console.log("Agent verified:", data);
-    },
-    onCancel: () => {
-      console.log("Verification cancelled");
-    },
+    network: NETWORK_NAME,
   });
 }

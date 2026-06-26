@@ -140,7 +140,7 @@ function KPICard({ title, value, trend, color }: { title: string; value: number;
   );
 }
 
-function StatCard({ title, value, description }: { title: string; value: string; description: string; icon: string }) {
+function StatCard({ title, value, description }: { title: string; value: string; description: string }) {
   return (
     <div className="bg-white border rounded-lg p-6">
       <p className="font-semibold">{title}</p>

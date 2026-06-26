@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X402PaymentRequest, executeX402Payment, createPaymentRequest } from '../../services/x402';
+import { X402PaymentRequest, executeX402Payment, createPaymentRequest } from '../services/x402';
 
 interface X402PaymentButtonProps {
   jobId: number;

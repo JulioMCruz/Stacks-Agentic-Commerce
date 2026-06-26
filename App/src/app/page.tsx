@@ -1,4 +1,4 @@
-import { ConnectButton } from "@stacks/connect-react";
+import WalletConnect from "../components/WalletConnect";
 import Link from "next/link";
 
 export default function Home() {
@@ -34,18 +34,7 @@ export default function Home() {
 
         {/* Wallet Connection */}
         <div className="flex justify-center mb-12">
-          <ConnectButton
-            appDetails={{
-              name: "PerkOS Stacks Agentic Commerce",
-              icon: "https://your-icon-url.com/logo.png",
-            }}
-            onSignIn={(profile) => {
-              console.log("Signed in:", profile);
-            }}
-            onSignOut={() => {
-              console.log("Signed out");
-            }}
-          />
+          <WalletConnect />
         </div>
 
         {/* Features Grid */}
@@ -141,9 +130,5 @@ function FeatureCard({
       <p className="text-gray-400">{description}</p>
       <span className={`mt-4 inline-block text-${color}-400`}>Learn more →</span>
     </Link>
-  );
-}
-      </main>
-    </div>
   );
 }

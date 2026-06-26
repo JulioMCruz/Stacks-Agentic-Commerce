@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
-import { openContractCall } from "@stacks/connect-react";
-import { uintCV, stringAsciiCV, principalCV, optionalCV, noneCV, someCV, bufferCVFromString } from "@stacks/transactions";
-import { CONTRACT_ADDRESS, AGENTIC_COMMERCE_CONTRACT } from "../../constants/contract";
-import { NETWORK } from "../../constants/network";
+import { request } from "@stacks/connect";
+import { Cl } from "@stacks/transactions";
+import { CONTRACT_ADDRESS } from "../../constants/contract";
+import { NETWORK_NAME } from "../../constants/network";
+
+const AGENTIC_COMMERCE = `${CONTRACT_ADDRESS}.agentic-commerce` as `${string}.${string}`;
 
 const STATUS_LABELS: Record<number, string> = {
   0: "Open",
@@ -78,34 +80,22 @@ export default function JobsPage() {
       const currentBlock = 1000; // TODO: Get actual block height from network
       const expiredAt = currentBlock + parseInt(formData.duration);
       
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "create-job",
         functionArgs: [
-          optionalCV(formData.provider ? someCV(principalCV(formData.provider)) : noneCV()),
-          principalCV(formData.evaluator),
-          uintCV(expiredAt),
-          stringAsciiCV(formData.description),
+          formData.provider ? Cl.some(Cl.principal(formData.provider)) : Cl.none(),
+          Cl.principal(formData.evaluator),
+          Cl.uint(expiredAt),
+          Cl.stringAscii(formData.description),
         ],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Job created:", data);
-          setShowForm(false);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        network: NETWORK_NAME,
       });
+      setShowForm(false);
+      loadJobs();
     } catch (error) {
       console.error("Error creating job:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -115,29 +105,17 @@ export default function JobsPage() {
     setActiveAction(`setting-budget-${jobId}`);
     
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "set-budget",
-        functionArgs: [uintCV(jobId), uintCV(parseInt(actionForm.budget))],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Budget set:", data);
-          setActionForm(null);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        functionArgs: [Cl.uint(jobId), Cl.uint(parseInt(actionForm.budget))],
+        network: NETWORK_NAME,
       });
+      setActionForm(null);
+      loadJobs();
     } catch (error) {
       console.error("Error setting budget:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -147,29 +125,17 @@ export default function JobsPage() {
     setActiveAction(`assigning-provider-${jobId}`);
     
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "assign-provider",
-        functionArgs: [uintCV(jobId), principalCV(actionForm.provider)],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Provider assigned:", data);
-          setActionForm(null);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        functionArgs: [Cl.uint(jobId), Cl.principal(actionForm.provider)],
+        network: NETWORK_NAME,
       });
+      setActionForm(null);
+      loadJobs();
     } catch (error) {
       console.error("Error assigning provider:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -177,28 +143,16 @@ export default function JobsPage() {
   async function handleFundJob(jobId: number) {
     setActiveAction(`funding-${jobId}`);
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "fund-job",
-        functionArgs: [uintCV(jobId)],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Job funded:", data);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        functionArgs: [Cl.uint(jobId)],
+        network: NETWORK_NAME,
       });
+      loadJobs();
     } catch (error) {
       console.error("Error funding job:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -206,31 +160,19 @@ export default function JobsPage() {
   async function handleSubmitWork(jobId: number) {
     setActiveAction(`submitting-${jobId}`);
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "submit-work",
         functionArgs: [
-          uintCV(jobId),
-          bufferCVFromString("work-submitted"),
+          Cl.uint(jobId),
+          Cl.bufferFromAscii("work-submitted"),
         ],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Work submitted:", data);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        network: NETWORK_NAME,
       });
+      loadJobs();
     } catch (error) {
       console.error("Error submitting work:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -238,28 +180,16 @@ export default function JobsPage() {
   async function handleCompleteJob(jobId: number) {
     setActiveAction(`completing-${jobId}`);
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "complete-job",
-        functionArgs: [uintCV(jobId)],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Job completed:", data);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        functionArgs: [Cl.uint(jobId)],
+        network: NETWORK_NAME,
       });
+      loadJobs();
     } catch (error) {
       console.error("Error completing job:", error);
+    } finally {
       setActiveAction(null);
     }
   }
@@ -267,28 +197,16 @@ export default function JobsPage() {
   async function handleRejectJob(jobId: number) {
     setActiveAction(`rejecting-${jobId}`);
     try {
-      await openContractCall({
-        contractAddress: CONTRACT_ADDRESS,
-        contractName: "agentic-commerce",
+      await request("stx_callContract", {
+        contract: AGENTIC_COMMERCE,
         functionName: "reject-job",
-        functionArgs: [uintCV(jobId)],
-        network: NETWORK,
-        appDetails: {
-          name: "PerkOS Stacks Agentic Commerce",
-          icon: "https://your-icon-url.com/logo.png",
-        },
-        onFinish: (data) => {
-          console.log("Job rejected:", data);
-          setActiveAction(null);
-          loadJobs();
-        },
-        onCancel: () => {
-          console.log("Transaction cancelled");
-          setActiveAction(null);
-        },
+        functionArgs: [Cl.uint(jobId)],
+        network: NETWORK_NAME,
       });
+      loadJobs();
     } catch (error) {
       console.error("Error rejecting job:", error);
+    } finally {
       setActiveAction(null);
     }
   }
