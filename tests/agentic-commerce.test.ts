@@ -202,4 +202,100 @@ describe("agentic-commerce – job lifecycle & escrow", () => {
       ).toBeErr(Cl.uint(209));
     });
   });
+
+  describe("expiry edge cases", () => {
+    it("expire on a FUNDED job past expiry refunds the client and sets status EXPIRED (u5)", () => {
+      // short-lived job
+      simnet.callPublicFn(
+        C,
+        "create-job",
+        [Cl.none(), Cl.principal(evaluator), Cl.uint(simnet.blockHeight + 5), Cl.stringAscii("short funded job")],
+        client
+      );
+      simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], client);
+      simnet.callPublicFn(C, "fund-job", [Cl.uint(1)], client);
+      expect(
+        simnet.callReadOnlyFn(C, "get-escrow-balance", [Cl.uint(1)], deployer).result
+      ).toBeOk(Cl.uint(BUDGET));
+
+      simnet.mineEmptyBlocks(10); // advance past expired-at
+
+      const expire = simnet.callPublicFn(C, "expire-job", [Cl.uint(1)], deployer);
+      expect(expire.result).toBeOk(Cl.bool(true));
+
+      const refund = stxTransfers(expire.events);
+      expect(refund.length).toBe(1);
+      expect(refund[0].data.amount).toBe(String(BUDGET));
+      expect(refund[0].data.recipient).toBe(client);
+      expect(statusOf()).toBe(5); // EXPIRED
+
+      // escrow cleared after refund
+      expect(
+        simnet.callReadOnlyFn(C, "get-escrow-balance", [Cl.uint(1)], deployer).result
+      ).toBeOk(Cl.uint(0));
+    });
+
+    it("expire on an unfunded OPEN job past expiry just expires it (no STX transfer)", () => {
+      simnet.callPublicFn(
+        C,
+        "create-job",
+        [Cl.none(), Cl.principal(evaluator), Cl.uint(simnet.blockHeight + 5), Cl.stringAscii("short open job")],
+        client
+      );
+      expect(statusOf()).toBe(0); // OPEN
+
+      simnet.mineEmptyBlocks(10); // advance past expired-at
+
+      const expire = simnet.callPublicFn(C, "expire-job", [Cl.uint(1)], deployer);
+      expect(expire.result).toBeOk(Cl.bool(true));
+      expect(stxTransfers(expire.events).length).toBe(0); // nothing was escrowed
+      expect(statusOf()).toBe(5); // EXPIRED
+    });
+
+    it("cannot expire a job before its expiry (ERR_JOB_EXPIRED u204)", () => {
+      // long-lived job (default createJob uses +1000 blocks)
+      createJob();
+      expect(
+        simnet.callPublicFn(C, "expire-job", [Cl.uint(1)], deployer).result
+      ).toBeErr(Cl.uint(204));
+    });
+  });
+
+  describe("more guards", () => {
+    it("set-budget on a non-OPEN job returns ERR_INVALID_STATUS (u203)", () => {
+      createAndFund(); // now FUNDED, no longer OPEN
+      expect(
+        simnet.callPublicFn(C, "set-budget", [Cl.uint(1), Cl.uint(BUDGET)], client).result
+      ).toBeErr(Cl.uint(203));
+    });
+
+    it("assign-provider by a non-client returns ERR_NOT_CLIENT (u207)", () => {
+      createAndFund(); // FUNDED so the status guard passes and we reach the client check
+      expect(
+        simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], provider)
+          .result
+      ).toBeErr(Cl.uint(207));
+    });
+
+    it("submit-work by a non-provider returns ERR_NOT_PROVIDER (u208)", () => {
+      createAndFund();
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      // evaluator (not the assigned provider) tries to submit
+      expect(
+        simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("x")], evaluator)
+          .result
+      ).toBeErr(Cl.uint(208));
+    });
+
+    it("reject-job by a stranger (neither client nor evaluator) returns ERR_NOT_AUTHORIZED (u201)", () => {
+      whitelistCommerce();
+      createAndFund();
+      simnet.callPublicFn(C, "assign-provider", [Cl.uint(1), Cl.principal(provider)], client);
+      simnet.callPublicFn(C, "submit-work", [Cl.uint(1), Cl.bufferFromAscii("work")], provider);
+      // provider is neither client nor evaluator -> not authorized to reject
+      expect(
+        simnet.callPublicFn(C, "reject-job", [Cl.uint(1)], provider).result
+      ).toBeErr(Cl.uint(201));
+    });
+  });
 });

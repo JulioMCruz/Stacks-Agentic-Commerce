@@ -123,4 +123,176 @@ describe("agent-registry", () => {
         .result
     ).toBeOk(aliceTuple({ active: Cl.bool(false) }));
   });
+
+  describe("ownership & access control", () => {
+    it("rejects set-owner from a non-owner (ERR_NOT_OWNER u100) and leaves the owner unchanged", () => {
+      expect(
+        simnet.callPublicFn("agent-registry", "set-owner", [Cl.principal(wallet1)], wallet1)
+          .result
+      ).toBeErr(Cl.uint(100));
+
+      expect(
+        simnet.callReadOnlyFn("agent-registry", "get-owner", [], deployer).result
+      ).toBeOk(Cl.principal(deployer));
+    });
+
+    it("lets the owner transfer ownership and get-owner reflects the new owner", () => {
+      expect(
+        simnet.callPublicFn("agent-registry", "set-owner", [Cl.principal(wallet1)], deployer)
+          .result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        simnet.callReadOnlyFn("agent-registry", "get-owner", [], deployer).result
+      ).toBeOk(Cl.principal(wallet1));
+    });
+
+    it("only the owner can add a protocol-caller and is-protocol-caller reflects it", () => {
+      // non-owner is rejected
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "add-protocol-caller",
+          [Cl.principal(wallet2)],
+          wallet1
+        ).result
+      ).toBeErr(Cl.uint(100));
+
+      // not whitelisted yet
+      expect(
+        simnet.callReadOnlyFn(
+          "agent-registry",
+          "is-protocol-caller",
+          [Cl.principal(wallet2)],
+          deployer
+        ).result
+      ).toBeBool(false);
+
+      // owner whitelists
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "add-protocol-caller",
+          [Cl.principal(wallet2)],
+          deployer
+        ).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        simnet.callReadOnlyFn(
+          "agent-registry",
+          "is-protocol-caller",
+          [Cl.principal(wallet2)],
+          deployer
+        ).result
+      ).toBeBool(true);
+    });
+
+    it("only the owner can remove a protocol-caller and is-protocol-caller flips back to false", () => {
+      simnet.callPublicFn(
+        "agent-registry",
+        "add-protocol-caller",
+        [Cl.principal(wallet2)],
+        deployer
+      );
+
+      // non-owner cannot remove
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "remove-protocol-caller",
+          [Cl.principal(wallet2)],
+          wallet1
+        ).result
+      ).toBeErr(Cl.uint(100));
+      expect(
+        simnet.callReadOnlyFn(
+          "agent-registry",
+          "is-protocol-caller",
+          [Cl.principal(wallet2)],
+          deployer
+        ).result
+      ).toBeBool(true);
+
+      // owner removes
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "remove-protocol-caller",
+          [Cl.principal(wallet2)],
+          deployer
+        ).result
+      ).toBeOk(Cl.bool(true));
+      expect(
+        simnet.callReadOnlyFn(
+          "agent-registry",
+          "is-protocol-caller",
+          [Cl.principal(wallet2)],
+          deployer
+        ).result
+      ).toBeBool(false);
+    });
+
+    it("only the owner can upgrade-implementation and get-current-implementation updates", () => {
+      const newImpl = `${deployer}.agent-registry-impl`;
+
+      // non-owner is rejected
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "upgrade-implementation",
+          [Cl.principal(newImpl)],
+          wallet1
+        ).result
+      ).toBeErr(Cl.uint(100));
+
+      // owner upgrades
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "upgrade-implementation",
+          [Cl.principal(newImpl)],
+          deployer
+        ).result
+      ).toBeOk(Cl.bool(true));
+
+      expect(
+        simnet.callReadOnlyFn(
+          "agent-registry",
+          "get-current-implementation",
+          [],
+          deployer
+        ).result
+      ).toBeOk(Cl.principal(newImpl));
+    });
+  });
+
+  describe("registration & update edge cases", () => {
+    it("rejects an empty description (ERR_INVALID_DESCRIPTION u104)", () => {
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "register-agent",
+          [
+            Cl.stringAscii("Bob Agent"),
+            Cl.stringAscii(""),
+            Cl.principal(wallet1),
+            endpoints,
+          ],
+          wallet1
+        ).result
+      ).toBeErr(Cl.uint(104));
+    });
+
+    it("update-agent on a non-existent id returns ERR_AGENT_NOT_FOUND (u102)", () => {
+      expect(
+        simnet.callPublicFn(
+          "agent-registry",
+          "update-agent",
+          [Cl.uint(999), Cl.some(Cl.stringAscii("Ghost")), Cl.none(), Cl.none()],
+          wallet1
+        ).result
+      ).toBeErr(Cl.uint(102));
+    });
+  });
 });
