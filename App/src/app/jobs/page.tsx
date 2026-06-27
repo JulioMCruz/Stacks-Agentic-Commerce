@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Briefcase } from "lucide-react";
 import { getJob, getJobCount, getEscrowBalance, Job } from "../../services/agentic-commerce";
+import { getBlockHeight } from "../../services/onchain-stats";
 import StatusBadge from "../../components/StatusBadge";
+import JobStepper from "../../components/JobStepper";
 import { request } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
@@ -57,8 +59,8 @@ export default function JobsPage() {
     setActiveAction("creating");
 
     try {
-      const currentBlock = 1000; // TODO: Get actual block height from network
-      const expiredAt = currentBlock + parseInt(formData.duration);
+      const currentBlock = await getBlockHeight();
+      const expiredAt = (currentBlock || 1) + parseInt(formData.duration);
 
       await request("stx_callContract", {
         contract: AGENTIC_COMMERCE,
@@ -259,6 +261,8 @@ export default function JobsPage() {
                 </div>
                 <StatusBadge status={job.status} />
               </div>
+
+              <JobStepper status={job.status} />
 
               <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
                 <div>

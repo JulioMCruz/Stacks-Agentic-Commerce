@@ -87,3 +87,46 @@ export async function getOnchainStats(): Promise<OnchainStats> {
     recent: recent.slice(0, 12),
   };
 }
+
+// Current Stacks tip height, used to compute real job expiry blocks.
+export async function getBlockHeight(): Promise<number> {
+  try {
+    const r = await fetch(`${API}/v2/info`, { cache: "no-store" });
+    if (!r.ok) return 0;
+    const d = await r.json();
+    return Number(d.stacks_tip_height ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+// Full on-chain activity log: all contract-call transactions across the contracts, newest first.
+export async function getRecentActivity(limit = 40): Promise<RecentTx[]> {
+  const all: RecentTx[] = [];
+  for (const c of CONTRACTS) {
+    try {
+      const r = await fetch(
+        `${API}/extended/v1/address/${CONTRACT_ADDRESS}.${c}/transactions?limit=50`,
+        { cache: "no-store" }
+      );
+      if (!r.ok) continue;
+      const d = await r.json();
+      for (const tx of (d.results ?? []) as any[]) {
+        if (tx.tx_type === "contract_call") {
+          all.push({
+            txId: tx.tx_id,
+            contract: c,
+            fn: tx.contract_call?.function_name ?? "",
+            sender: tx.sender_address,
+            status: tx.tx_status,
+            time: tx.block_time_iso,
+          });
+        }
+      }
+    } catch {
+      // skip
+    }
+  }
+  all.sort((a, b) => (b.time ?? "").localeCompare(a.time ?? ""));
+  return all.slice(0, limit);
+}
