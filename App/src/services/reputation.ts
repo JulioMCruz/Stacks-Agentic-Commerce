@@ -1,7 +1,7 @@
 import { request } from "@stacks/connect";
-import { Cl } from "@stacks/transactions";
+import { fetchCallReadOnlyFunction, cvToValue, Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../constants/contract";
-import { NETWORK_NAME } from "../constants/network";
+import { NETWORK, NETWORK_NAME } from "../constants/network";
 
 const REPUTATION_CONTRACT = `${CONTRACT_ADDRESS}.reputation-registry` as `${string}.${string}`;
 
@@ -19,19 +19,53 @@ export interface Rating {
   comment: string;
 }
 
-export async function getReputation(agentAddress: string): Promise<Reputation | null> {
+const ZERO: Reputation = {
+  totalScore: 0,
+  ratingCount: 0,
+  averageScore: 0,
+  completedJobs: 0,
+  disputedJobs: 0,
+};
+
+export async function getReputation(agentAddress: string): Promise<Reputation> {
   try {
-    // TODO: wire to reputation-registry get-reputation read-only call
+    const cv = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: "reputation-registry",
+      functionName: "get-reputation",
+      functionArgs: [Cl.principal(agentAddress)],
+      network: NETWORK,
+      senderAddress: CONTRACT_ADDRESS,
+    });
+    if (cv.type !== "ok") return ZERO;
+    const t: any = cvToValue(cv).value;
     return {
-      totalScore: 0,
-      ratingCount: 0,
-      averageScore: 0,
-      completedJobs: 0,
-      disputedJobs: 0,
+      totalScore: Number(t["total-score"]?.value ?? 0),
+      ratingCount: Number(t["rating-count"]?.value ?? 0),
+      averageScore: Number(t["average-score"]?.value ?? 0),
+      completedJobs: Number(t["completed-jobs"]?.value ?? 0),
+      disputedJobs: Number(t["disputed-jobs"]?.value ?? 0),
     };
   } catch (error) {
     console.error("Error getting reputation:", error);
-    return null;
+    return ZERO;
+  }
+}
+
+export async function hasRated(agentAddress: string, raterAddress: string): Promise<boolean> {
+  try {
+    const cv = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: "reputation-registry",
+      functionName: "has-rated",
+      functionArgs: [Cl.principal(agentAddress), Cl.principal(raterAddress)],
+      network: NETWORK,
+      senderAddress: CONTRACT_ADDRESS,
+    });
+    return cvToValue(cv) === true;
+  } catch (error) {
+    console.error("Error checking rating:", error);
+    return false;
   }
 }
 
@@ -52,14 +86,4 @@ export async function rateAgent(
     ],
     network: NETWORK_NAME,
   });
-}
-
-export async function hasRated(agentAddress: string, raterAddress: string): Promise<boolean> {
-  try {
-    // TODO: wire to reputation-registry has-rated read-only call
-    return false;
-  } catch (error) {
-    console.error("Error checking rating:", error);
-    return false;
-  }
 }

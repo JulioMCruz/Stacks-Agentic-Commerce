@@ -1,7 +1,7 @@
 import { request } from "@stacks/connect";
-import { Cl } from "@stacks/transactions";
+import { fetchCallReadOnlyFunction, cvToValue, Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../constants/contract";
-import { NETWORK_NAME } from "../constants/network";
+import { NETWORK, NETWORK_NAME } from "../constants/network";
 
 const VALIDATION_CONTRACT = `${CONTRACT_ADDRESS}.validation-registry` as `${string}.${string}`;
 
@@ -13,23 +13,45 @@ export interface Verification {
   capabilities: string[];
 }
 
-export async function getVerification(agentAddress: string): Promise<Verification | null> {
-  try {
-    // TODO: wire to validation-registry get-verification read-only call
-    return null;
-  } catch (error) {
-    console.error("Error getting verification:", error);
-    return null;
-  }
-}
-
 export async function isVerified(agentAddress: string): Promise<boolean> {
   try {
-    // TODO: wire to validation-registry is-verified read-only call
-    return false;
+    const cv = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: "validation-registry",
+      functionName: "is-verified",
+      functionArgs: [Cl.principal(agentAddress)],
+      network: NETWORK,
+      senderAddress: CONTRACT_ADDRESS,
+    });
+    return cvToValue(cv) === true;
   } catch (error) {
     console.error("Error checking verification:", error);
     return false;
+  }
+}
+
+export async function getVerification(agentAddress: string): Promise<Verification | null> {
+  try {
+    const cv = await fetchCallReadOnlyFunction({
+      contractAddress: CONTRACT_ADDRESS,
+      contractName: "validation-registry",
+      functionName: "get-verification",
+      functionArgs: [Cl.principal(agentAddress)],
+      network: NETWORK,
+      senderAddress: CONTRACT_ADDRESS,
+    });
+    if (cv.type !== "ok") return null;
+    const t: any = cvToValue(cv).value;
+    return {
+      isVerified: t["is-verified"]?.value ?? false,
+      verifiedBy: t["verified-by"]?.value ?? "",
+      verifiedAt: Number(t["verified-at"]?.value ?? 0),
+      proofHash: t["proof-hash"]?.value ?? "",
+      capabilities: (t["capabilities"]?.value ?? []).map((c: any) => c.value),
+    };
+  } catch (error) {
+    console.error("Error getting verification:", error);
+    return null;
   }
 }
 

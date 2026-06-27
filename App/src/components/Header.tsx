@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Logo, { GithubMark } from "./Logo";
 import WalletConnect from "./WalletConnect";
+import { NETWORK_NAME } from "../constants/network";
 
 const NAV = [
   { href: "/agents", label: "Agents" },
@@ -23,6 +24,9 @@ export default function Header() {
           <span className="text-[15px] font-bold tracking-tight text-white">PerkOS</span>
           <span className="hidden text-[15px] font-medium text-mist-500 sm:inline">
             Agentic Commerce
+          </span>
+          <span className="rounded-full border border-brand/25 bg-brand/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-300">
+            {NETWORK_NAME}
           </span>
         </Link>
 

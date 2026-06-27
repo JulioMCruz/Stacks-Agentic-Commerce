@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Power, Fingerprint } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Power, Fingerprint, Star, BadgeCheck } from "lucide-react";
 import { getAgent, getAgentCount, Agent } from "../../services/agent-registry";
+import { getReputation, rateAgent } from "../../services/reputation";
+import { isVerified } from "../../services/validation";
 import { request, getLocalStorage } from "@stacks/connect";
 import { Cl } from "@stacks/transactions";
 import { CONTRACT_ADDRESS } from "../../constants/contract";
@@ -27,6 +29,9 @@ export default function AgentsPage() {
     endpointName: "",
     endpointUrl: "",
   });
+  const [reps, setReps] = useState<Record<number, { avg: number; count: number; verified: boolean }>>({});
+  const [ratingFor, setRatingFor] = useState<number | null>(null);
+  const [ratingScore, setRatingScore] = useState(5);
 
   useEffect(() => {
     loadAgents();
@@ -43,6 +48,14 @@ export default function AgentsPage() {
         if (agent) agentList.push(agent);
       }
       setAgents(agentList);
+      // Load on-chain reputation + verification per agent (keyed by wallet).
+      const entries = await Promise.all(
+        agentList.map(async (a) => {
+          const [rep, verified] = await Promise.all([getReputation(a.wallet), isVerified(a.wallet)]);
+          return [a.id, { avg: rep.averageScore, count: rep.ratingCount, verified }] as const;
+        })
+      );
+      setReps(Object.fromEntries(entries));
     } catch (error) {
       console.error("Error loading agents:", error);
       setError("Failed to load agents. Please try again.");
@@ -124,6 +137,19 @@ export default function AgentsPage() {
       loadAgents();
     } catch (error) {
       console.error("Error deactivating agent:", error);
+    } finally {
+      setActiveAction(null);
+    }
+  }
+
+  async function handleRate(agent: Agent, score: number) {
+    setActiveAction(`rating-${agent.id}`);
+    try {
+      await rateAgent(agent.wallet, score, 0, "Rated via PerkOS");
+      setRatingFor(null);
+      loadAgents();
+    } catch (error) {
+      console.error("Error rating agent:", error);
     } finally {
       setActiveAction(null);
     }
@@ -250,10 +276,23 @@ export default function AgentsPage() {
                     <p className="mt-0.5 text-sm text-mist-300">{agent.description}</p>
                   </div>
                 </div>
-                <span className={`badge ${agent.active ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-mist-500"}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${agent.active ? "bg-emerald-400" : "bg-mist-500"}`} />
-                  {agent.active ? "Active" : "Inactive"}
-                </span>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                  {reps[agent.id]?.verified && (
+                    <span className="badge border-brand/30 text-brand-300">
+                      <BadgeCheck className="h-3.5 w-3.5" /> Verified
+                    </span>
+                  )}
+                  {(reps[agent.id]?.count ?? 0) > 0 && (
+                    <span className="badge border-amber-500/30 text-amber-300">
+                      <Star className="h-3 w-3 fill-amber-300" /> {reps[agent.id].avg}/5
+                      <span className="text-mist-500">({reps[agent.id].count})</span>
+                    </span>
+                  )}
+                  <span className={`badge ${agent.active ? "border-emerald-500/30 text-emerald-300" : "border-white/10 text-mist-500"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${agent.active ? "bg-emerald-400" : "bg-mist-500"}`} />
+                    {agent.active ? "Active" : "Inactive"}
+                  </span>
+                </div>
               </div>
 
               <dl className="mt-4 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
@@ -270,7 +309,24 @@ export default function AgentsPage() {
                 </div>
               )}
 
-              <div className="mt-4 flex gap-2 border-t border-white/[0.06] pt-4">
+              {ratingFor === agent.id && (
+                <div className="mt-4 flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3">
+                  <span className="text-sm text-mist-300">Your rating</span>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button key={s} type="button" onClick={() => setRatingScore(s)} className="p-0.5" aria-label={`${s} stars`}>
+                      <Star className={`h-5 w-5 ${s <= ratingScore ? "fill-amber-300 text-amber-300" : "text-mist-500"}`} />
+                    </button>
+                  ))}
+                  <button onClick={() => handleRate(agent, ratingScore)} className="btn-sm ml-auto bg-brand text-white hover:bg-brand-600" disabled={activeAction === `rating-${agent.id}`}>
+                    {activeAction === `rating-${agent.id}` ? "Submitting…" : "Submit"}
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
+                <button onClick={() => setRatingFor(ratingFor === agent.id ? null : agent.id)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white" disabled={!!activeAction}>
+                  <Star className="h-3.5 w-3.5" /> Rate
+                </button>
                 <button onClick={() => startEdit(agent)} className="btn-sm border border-white/[0.12] text-mist-300 hover:text-white" disabled={!!activeAction}>
                   <Pencil className="h-3.5 w-3.5" /> Edit
                 </button>
